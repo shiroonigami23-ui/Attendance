@@ -1,0 +1,2586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Campus Attendance System - RJIT BSF Academy</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4299e1;
+            --primary-dark: #3182ce;
+            --secondary: #48bb78;
+            --secondary-dark: #38a169;
+            --danger: #f56565;
+            --danger-dark: #e53e3e;
+            --warning: #ed8936;
+            --warning-dark: #dd6b20;
+            --info: #4299e1;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --muted: #718096;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-lg: rgba(0, 0, 0, 0.15);
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --success: #48bb78;
+            --accent: #9f7aea;
+        }
+
+        [data-theme="dark"] {
+            --primary: #63b3ed;
+            --secondary: #68d391;
+            --danger: #fc8181;
+            --warning: #f6ad55;
+            --light: #1a202c;
+            --dark: #f7fafc;
+            --muted: #a0aec0;
+            --border: #2d3748;
+            --gradient-bg: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            --glass-bg: rgba(26, 32, 44, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--gradient-bg);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Enhanced Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px var(--shadow-lg);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        /* Notifications */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .notification {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+            animation: slideIn 0.3s ease-out;
+            cursor: pointer;
+        }
+
+        .notification.upcoming {
+            border-left-color: var(--warning);
+        }
+
+        .notification.attendance-time {
+            border-left-color: var(--success);
+        }
+
+        .notification.urgent {
+            border-left-color: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px var(--shadow-lg); }
+            50% { box-shadow: 0 8px 32px rgba(245, 101, 101, 0.3); }
+        }
+
+        .notification h4 {
+            color: var(--dark);
+            font-size: 1rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* Alert System */
+        .alert {
+            position: relative;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert-success {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--secondary-dark);
+            border-color: var(--secondary);
+        }
+
+        .alert-danger {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger-dark);
+            border-color: var(--danger);
+        }
+
+        .alert-warning {
+            background: rgba(237, 137, 54, 0.1);
+            color: var(--warning-dark);
+            border-color: var(--warning);
+        }
+
+        .alert-info {
+            background: rgba(66, 153, 225, 0.1);
+            color: var(--primary-dark);
+            border-color: var(--primary);
+        }
+
+        .alert-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Device Warning */
+        .device-warning {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+        }
+
+        .device-warning .icon {
+            font-size: 4rem;
+            color: var(--danger);
+            margin-bottom: 20px;
+        }
+
+        .device-warning h2 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .device-warning p {
+            color: var(--muted);
+            margin-bottom: 10px;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Authentication Container */
+        .auth-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-header h2 {
+            color: var(--dark);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .auth-header p {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .tab:not(.active):hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--dark);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group.has-icon {
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--glass-bg);
+            color: var(--dark);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group.has-icon input {
+            padding-left: 50px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            background: var(--light);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: var(--warning-dark);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .user-details h3 {
+            color: var(--dark);
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+        }
+
+        .user-details p {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .current-time {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: rgba(66, 153, 225, 0.1);
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .mb-2 {
+            margin-bottom: 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px var(--shadow-lg);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h3 {
+            color: var(--dark);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 30px 25px;
+        }
+
+        .stats-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-card .number.success {
+            background: linear-gradient(135deg, var(--secondary), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-card .number.danger {
+            background: linear-gradient(135deg, var(--danger), #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-card .number.warning {
+            background: linear-gradient(135deg, var(--warning), #ffa726);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-card .label {
+            color: var(--muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* QR Scanner */
+        .qr-scanner {
+            background: var(--glass-bg);
+            border: 3px dashed var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .qr-scanner:hover {
+            border-color: var(--primary);
+            background: rgba(66, 153, 225, 0.05);
+        }
+
+        .qr-scanner.scanning {
+            border-color: var(--success);
+            background: rgba(72, 187, 120, 0.05);
+            animation: scanPulse 2s infinite;
+        }
+
+        @keyframes scanPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .qr-scanner .icon {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .qr-scanner.scanning .icon {
+            color: var(--success);
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .qr-scanner h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .qr-scanner p {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        table th {
+            background: rgba(66, 153, 225, 0.1);
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table td {
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        table tr:hover {
+            background: rgba(66, 153, 225, 0.05);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-present {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--secondary-dark);
+        }
+
+        .status-absent {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger-dark);
+        }
+
+        .status-late {
+            background: rgba(237, 137, 54, 0.1);
+            color: var(--warning-dark);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 8px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .nav-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .nav-tab:not(.active):hover {
+            background: rgba(66, 153, 225, 0.1);
+            color: var(--primary);
+        }
+
+        /* Tab Panels */
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Timetable Styles */
+        .timetable-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-lg);
+        }
+
+        .timetable-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .section-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .section-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .timetable {
+            overflow-x: auto;
+        }
+
+        .timetable table {
+            min-width: 800px;
+        }
+
+        .time-slot {
+            background: rgba(66, 153, 225, 0.1);
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+
+        .subject-cell {
+            position: relative;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .subject-cell:hover {
+            background: rgba(66, 153, 225, 0.1);
+        }
+
+        .subject-cell.current {
+            background: rgba(72, 187, 120, 0.2);
+            border: 2px solid var(--success);
+        }
+
+        .subject-cell.upcoming {
+            background: rgba(237, 137, 54, 0.2);
+            border: 2px solid var(--warning);
+        }
+
+        .lunch-break {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #8b4513;
+            font-weight: 600;
+        }
+
+        .subject-name {
+            display: block;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .subject-type {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* Attendance History */
+        .attendance-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .calendar-day.present {
+            background: var(--success);
+            color: white;
+        }
+
+        .calendar-day.absent {
+            background: var(--danger);
+            color: white;
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--primary);
+            font-weight: bold;
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.1);
+            z-index: 1;
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-success {
+            color: var(--success) !important;
+        }
+
+        .text-danger {
+            color: var(--danger) !important;
+        }
+
+        .text-warning {
+            color: var(--warning) !important;
+        }
+
+        .text-muted {
+            color: var(--muted) !important;
+        }
+
+        .fw-bold {
+            font-weight: bold !important;
+        }
+
+        .fs-small {
+            font-size: 0.85rem !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .auth-container {
+                padding: 25px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+            }
+
+            .grid-4 {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .notification-container {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1><i class="fas fa-graduation-cap"></i> RJIT BSF Academy</h1>
+                    <p>Advanced Campus Attendance Management System</p>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                        <span>Dark Mode</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Notification Container -->
+        <div class="notification-container" id="notificationContainer"></div>
+
+        <!-- Device Registration Warning -->
+        <div id="deviceWarning" class="device-warning hidden">
+            <div class="icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Device Already Registered</h2>
+            <p>This device has already been used for registration. Only one registration per device is allowed.</p>
+            <p>Contact the administrator if you believe this is an error.</p>
+            <button class="btn btn-danger" onclick="clearDeviceData()" style="margin-top: 20px;">
+                <i class="fas fa-shield-alt"></i>
+                Admin Override
+            </button>
+        </div>
+
+        <!-- Authentication Container -->
+        <div id="authContainer" class="auth-container">
+            <div class="auth-header">
+                <h2>Access Attendance System</h2>
+                <p>Secure authentication for RJIT BSF Academy students and administrators</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('student')">
+                    <i class="fas fa-user-graduate"></i>
+                    Student
+                </button>
+                <button class="tab" onclick="switchTab('admin')">
+                    <i class="fas fa-user-shield"></i>
+                    Administrator
+                </button>
+            </div>
+
+            <!-- Student Tab -->
+            <div id="studentTab" class="tab-content active">
+                <form id="studentForm" onsubmit="handleStudentAuth(event)">
+                    <div class="form-group has-icon">
+                        <label for="rollNumber">Roll Number</label>
+                        <input type="text" id="rollNumber" placeholder="0902CS231001 - 0902CS231040" required>
+                        <i class="fas fa-id-badge input-icon"></i>
+                    </div>
+                    <div class="form-group has-icon">
+                        <label for="studentSection">Section</label>
+                        <select id="studentSection" required>
+                            <option value="">Select Section</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                        </select>
+                        <i class="fas fa-users input-icon"></i>
+                    </div>
+                    <div class="form-group has-icon">
+                        <label for="studentUsername">Username</label>
+                        <input type="text" id="studentUsername" placeholder="Enter your username" required>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                    <div class="form-group has-icon">
+                        <label for="studentPassword">Password</label>
+                        <input type="password" id="studentPassword" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Access System
+                    </button>
+                </form>
+            </div>
+
+            <!-- Admin Tab -->
+            <div id="adminTab" class="tab-content">
+                <form id="adminForm" onsubmit="handleAdminAuth(event)">
+                    <div class="form-group has-icon">
+                        <label for="adminUsername">Admin Username</label>
+                        <input type="text" id="adminUsername" placeholder="Enter admin username" required>
+                        <i class="fas fa-user-shield input-icon"></i>
+                    </div>
+                    <div class="form-group has-icon">
+                        <label for="adminPassword">Admin Password</label>
+                        <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-full">
+                        <i class="fas fa-shield-alt"></i>
+                        Admin Access
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Student Dashboard -->
+        <div id="studentDashboard" class="hidden">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">S</div>
+                        <div class="user-details">
+                            <h3 id="userName">Student Name</h3>
+                            <p id="userRoll">Roll Number | <span id="userSection">Section</span></p>
+                        </div>
+                    </div>
+                    <div class="current-time">
+                        <i class="fas fa-clock"></i>
+                        <span id="currentTime"></span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="switchDashboardTab('overview')">
+                        <i class="fas fa-chart-line"></i>
+                        Overview
+                    </button>
+                    <button class="nav-tab" onclick="switchDashboardTab('timetable')">
+                        <i class="fas fa-calendar-alt"></i>
+                        Timetable
+                    </button>
+                    <button class="nav-tab" onclick="switchDashboardTab('attendance')">
+                        <i class="fas fa-qr-reader"></i>
+                        Mark Attendance
+                    </button>
+                    <button class="nav-tab" onclick="switchDashboardTab('history')">
+                        <i class="fas fa-history"></i>
+                        My History
+                    </button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div id="overviewTab" class="tab-panel active">
+                    <!-- Quick Stats -->
+                    <div class="grid grid-4 mb-2">
+                        <div class="card stats-card">
+                            <div class="number success" id="totalPresent">85</div>
+                            <div class="label">Present Days</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number danger" id="totalAbsent">15</div>
+                            <div class="label">Absent Days</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number warning" id="attendancePercentage">85%</div>
+                            <div class="label">Attendance</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number" id="totalClasses">100</div>
+                            <div class="label">Total Classes</div>
+                        </div>
+                    </div>
+
+                    <!-- Current & Upcoming Classes -->
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3><i class="fas fa-play-circle"></i> Current Class</h3>
+                            <div id="currentClass">
+                                <div class="subject-name" id="currentSubject">No class currently</div>
+                                <div class="subject-type" id="currentTime">-</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-clock"></i> Next Class</h3>
+                            <div id="nextClass">
+                                <div class="subject-name" id="nextSubject">Loading...</div>
+                                <div class="subject-type" id="nextTime">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable Tab -->
+                <div id="timetableTab" class="tab-panel">
+                    <div class="card timetable-container">
+                        <div class="timetable-header">
+                            <h3><i class="fas fa-calendar-week"></i> Weekly Timetable</h3>
+                            <div class="section-selector">
+                                <button class="section-btn active" onclick="switchSection('A')" id="sectionA">Section A</button>
+                                <button class="section-btn" onclick="switchSection('B')" id="sectionB">Section B</button>
+                            </div>
+                        </div>
+                        <div class="timetable" id="timetableContent">
+                            <!-- Timetable will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mark Attendance Tab -->
+                <div id="attendanceTab" class="tab-panel">
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="qr-scanner" id="qrScanner" onclick="scanQR()">
+                                <div class="icon">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <h3>Scan QR Code</h3>
+                                <p>Click to mark your attendance</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-clock-o"></i> Today's Schedule</h3>
+                            <div id="todaySchedule">
+                                <!-- Today's schedule will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance History Tab -->
+                <div id="historyTab" class="tab-panel">
+                    <div class="card">
+                        <h3><i class="fas fa-chart-bar"></i> Attendance History</h3>
+                        <div class="grid grid-2">
+                            <div>
+                                <h4>Monthly Overview</h4>
+                                <div class="attendance-calendar" id="attendanceCalendar">
+                                    <!-- Calendar will be populated here -->
+                                </div>
+                            </div>
+                            <div>
+                                <h4>Subject-wise Attendance</h4>
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Subject</th>
+                                                <th>Present</th>
+                                                <th>Total</th>
+                                                <th>Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="subjectAttendanceTable">
+                                            <!-- Subject attendance will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="hidden">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <div class="user-info">
+                        <div class="user-avatar">A</div>
+                        <div class="user-details">
+                            <h3>Administrator</h3>
+                            <p>System Admin Panel</p>
+                        </div>
+                    </div>
+                    <div class="header-controls">
+                        <button class="btn btn-danger" onclick="adminLogout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Navigation -->
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="switchAdminTab('overview')">
+                        <i class="fas fa-chart-pie"></i>
+                        Overview
+                    </button>
+                    <button class="nav-tab" onclick="switchAdminTab('students')">
+                        <i class="fas fa-users"></i>
+                        Students
+                    </button>
+                    <button class="nav-tab" onclick="switchAdminTab('attendance')">
+                        <i class="fas fa-calendar-check"></i>
+                        Attendance
+                    </button>
+                    <button class="nav-tab" onclick="switchAdminTab('classes')">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        Classes
+                    </button>
+                    <button class="nav-tab" onclick="switchAdminTab('reports')">
+                        <i class="fas fa-file-alt"></i>
+                        Reports
+                    </button>
+                </div>
+
+                <!-- Admin Overview Tab -->
+                <div id="adminOverviewTab" class="tab-panel active">
+                    <div class="grid grid-4 mb-2">
+                        <div class="card stats-card">
+                            <div class="number" id="totalStudents">40</div>
+                            <div class="label">Total Students</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number success" id="activeStudents">38</div>
+                            <div class="label">Active Today</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number warning" id="avgAttendance">87%</div>
+                            <div class="label">Avg Attendance</div>
+                        </div>
+                        <div class="card stats-card">
+                            <div class="number" id="totalClasses">8</div>
+                            <div class="label">Classes Today</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Low Attendance Alert</h3>
+                            <div id="lowAttendanceStudents">
+                                <!-- Low attendance students will be listed here -->
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-chart-line"></i> Today's Summary</h3>
+                            <div id="todaySummary">
+                                <!-- Today's summary will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Students Tab -->
+                <div id="adminStudentsTab" class="tab-panel">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3><i class="fas fa-users"></i> Registered Students</h3>
+                            <div>
+                                <button class="btn btn-warning btn-sm" onclick="exportStudentData()">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="bulkLogout()">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Bulk Logout
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Roll Number</th>
+                                        <th>Username</th>
+                                        <th>Section</th>
+                                        <th>Device ID</th>
+                                        <th>Registration Date</th>
+                                        <th>Last Login</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentTableBody">
+                                    <!-- Students will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Attendance Tab -->
+                <div id="adminAttendanceTab" class="tab-panel">
+                    <div class="card">
+                        <h3><i class="fas fa-calendar-check"></i> Attendance Management</h3>
+                        <div class="grid grid-2">
+                            <div>
+                                <h4>Generate QR Code for Class</h4>
+                                <div class="form-group">
+                                    <select id="classSelector">
+                                        <option value="">Select Class</option>
+                                        <!-- Classes will be populated here -->
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="generateQRCode()">
+                                    <i class="fas fa-qrcode"></i>
+                                    Generate QR Code
+                                </button>
+                                <div id="qrCodeDisplay" class="qr-scanner" style="margin-top: 20px;">
+                                    <div class="icon">
+                                        <i class="fas fa-qrcode"></i>
+                                    </div>
+                                    <p>QR code will appear here</p>
+                                </div>
+                            </div>
+                            <div>
+                                <h4>Manual Attendance</h4>
+                                <div class="form-group">
+                                    <input type="text" id="manualRollNumber" placeholder="Enter Roll Number">
+                                </div>
+                                <div class="form-group">
+                                    <select id="attendanceStatus">
+                                        <option value="present">Present</option>
+                                        <option value="absent">Absent</option>
+                                        <option value="late">Late</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-secondary" onclick="markManualAttendance()">
+                                    <i class="fas fa-check"></i>
+                                    Mark Attendance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Classes Tab -->
+                <div id="adminClassesTab" class="tab-panel">
+                    <div class="card">
+                        <h3><i class="fas fa-chalkboard-teacher"></i> Class Management</h3>
+                        <div class="grid grid-2">
+                            <div>
+                                <h4>Add New Class</h4>
+                                <div class="form-group">
+                                    <input type="text" id="newSubjectCode" placeholder="Subject Code (e.g., CS501)">
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="newSubjectName" placeholder="Subject Name">
+                                </div>
+                                <div class="form-group">
+                                    <select id="newClassType">
+                                        <option value="Theory">Theory</option>
+                                        <option value="Lab">Lab</option>
+                                        <option value="Self Study">Self Study</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="addClass()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Class
+                                </button>
+                            </div>
+                            <div>
+                                <h4>Current Classes</h4>
+                                <div id="currentClassesList">
+                                    <!-- Current classes will be listed here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Reports Tab -->
+                <div id="adminReportsTab" class="tab-panel">
+                    <div class="card">
+                        <h3><i class="fas fa-file-alt"></i> Reports & Analytics</h3>
+                        <div class="grid grid-3">
+                            <button class="btn btn-primary" onclick="generateAttendanceReport()">
+                                <i class="fas fa-chart-bar"></i>
+                                Attendance Report
+                            </button>
+                            <button class="btn btn-secondary" onclick="generateStudentReport()">
+                                <i class="fas fa-users"></i>
+                                Student Report
+                            </button>
+                            <button class="btn btn-warning" onclick="generateClassReport()">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                Class Report
+                            </button>
+                        </div>
+                        <div id="reportOutput" style="margin-top: 20px;">
+                            <!-- Report output will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Attendance System with Timetable Integration
+        class AttendanceSystem {
+            constructor() {
+                this.deviceFingerprint = this.generateDeviceFingerprint();
+                this.validRollNumbers = this.generateValidRollNumbers();
+                this.timetableData = this.initializeTimetableData();
+                this.currentSection = 'A';
+                this.notifications = [];
+                this.attendanceHistory = this.loadAttendanceHistory();
+                this.init();
+            }
+
+            generateDeviceFingerprint() {
+                // Enhanced device fingerprinting
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('RJIT BSF Academy Device Fingerprint', 2, 2);
+                
+                const fingerprint = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    navigator.platform,
+                    canvas.toDataURL(),
+                    navigator.hardwareConcurrency || 'unknown',
+                    navigator.cookieEnabled,
+                    navigator.doNotTrack || 'unknown'
+                ].join('|');
+                
+                return btoa(fingerprint).substring(0, 32);
+            }
+
+            generateValidRollNumbers() {
+                const rollNumbers = [];
+                for (let i = 1; i <= 40; i++) {
+                    rollNumbers.push(`0902CS231${i.toString().padStart(3, '0')}`);
+                }
+                return rollNumbers;
+            }
+
+            initializeTimetableData() {
+                return {
+                    A: {
+                        Monday: {
+                            '09:10-10:00': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '10:00-10:50': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '10:50-11:40': { subject: 'CS504', type: 'Theory', room: 'S20' },
+                            '11:40-12:30': { subject: 'CS507', type: 'Theory', room: 'S20' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS502', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '14:10-15:00': { subject: 'Self Study', type: 'Study', room: '-' }
+                        },
+                        Tuesday: {
+                            '09:10-10:00': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '10:00-10:50': { subject: 'CS504', type: 'Theory', room: 'S20' },
+                            '10:50-11:40': { subject: 'CS506', type: 'Lab', room: 'B1+B2 NET LAB' },
+                            '11:40-12:30': { subject: 'CS506', type: 'Lab', room: 'B1+B2 NET LAB' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Lab', room: 'NET LAB' },
+                            '14:10-15:00': { subject: 'CS505', type: 'Lab', room: 'B1+B2 NET LAB' }
+                        },
+                        Wednesday: {
+                            '09:10-10:00': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '10:00-10:50': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '10:50-11:40': { subject: 'CS501', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '11:40-12:30': { subject: 'CS501', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS508', type: 'Lab', room: 'B1+B2' },
+                            '14:10-15:00': { subject: 'CS503', type: 'Theory', room: 'S21' }
+                        },
+                        Thursday: {
+                            '09:10-10:00': { subject: 'CS506', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '10:00-10:50': { subject: 'CS507', type: 'Theory', room: '-' },
+                            '10:50-11:40': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '11:40-12:30': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Lab', room: 'CM LAB' },
+                            '14:10-15:00': { subject: 'CS504', type: 'Theory', room: 'S21' },
+                            '15:00-15:50': { subject: 'Self Study', type: 'Study', room: '-' }
+                        },
+                        Friday: {
+                            '09:10-10:00': { subject: 'CS508', type: 'Lab', room: 'B1+B2' },
+                            '10:00-10:50': { subject: 'CS505', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '10:50-11:40': { subject: 'CS505', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '11:40-12:30': { subject: 'CS505', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Theory', room: 'S21' },
+                            '14:10-15:00': { subject: 'CS507', type: 'Theory', room: '-' },
+                            '15:00-15:50': { subject: 'Self Study', type: 'Study', room: '-' }
+                        }
+                    },
+                    B: {
+                        Monday: {
+                            '09:10-10:00': { subject: 'CS505', type: 'Lab', room: 'B1+B2 NET LAB' },
+                            '10:00-10:50': { subject: 'CS501', type: 'Theory', room: 'S23' },
+                            '10:50-11:40': { subject: 'Self Study', type: 'Study', room: '-' },
+                            '11:40-12:30': { subject: 'Self Study', type: 'Study', room: '-' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS504', type: 'Lab', room: 'NET LAB' },
+                            '14:10-15:00': { subject: 'CS506', type: 'Lab', room: 'B1+B2 NET LAB' }
+                        },
+                        Tuesday: {
+                            '09:10-10:00': { subject: 'CS501', type: 'Lab', room: 'B1+B2 NET LAB' },
+                            '10:00-10:50': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '10:50-11:40': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '11:40-12:30': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Lab', room: 'CM LAB' },
+                            '14:10-15:00': { subject: 'CS507', type: 'Theory', room: '-' },
+                            '15:00-15:50': { subject: 'Self Study', type: 'Study', room: '-' }
+                        },
+                        Wednesday: {
+                            '09:10-10:00': { subject: 'CS504', type: 'Lab', room: 'NET LAB' },
+                            '10:00-10:50': { subject: 'CS507', type: 'Theory', room: '-' },
+                            '10:50-11:40': { subject: 'CS505', type: 'Lab', room: 'B1+B2 NETLAB' },
+                            '11:40-12:30': { subject: 'CS505', type: 'Lab', room: 'B1+B2 NETLAB' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '14:10-15:00': { subject: 'Self Study', type: 'Study', room: '-' },
+                            '15:00-15:50': { subject: 'CS503', type: 'Theory', room: 'S20' }
+                        },
+                        Thursday: {
+                            '09:10-10:00': { subject: 'CS501', type: 'Theory', room: 'S20' },
+                            '10:00-10:50': { subject: 'CS507', type: 'Theory', room: '-' },
+                            '10:50-11:40': { subject: 'CS502', type: 'Lab', room: 'B1+B2 CMLAB' },
+                            '11:40-12:30': { subject: 'CS502', type: 'Lab', room: 'B1+B2 CMLAB' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Lab', room: 'NET LAB' },
+                            '14:10-15:00': { subject: 'CS508', type: 'Theory', room: 'B1+B2' }
+                        },
+                        Friday: {
+                            '09:10-10:00': { subject: 'CS506', type: 'Lab', room: 'B1+B2 CM LAB' },
+                            '10:00-10:50': { subject: 'CS502', type: 'Theory', room: 'S20' },
+                            '10:50-11:40': { subject: 'CS504', type: 'Theory', room: 'S20' },
+                            '11:40-12:30': { subject: 'CS504', type: 'Theory', room: 'S20' },
+                            '12:30-13:20': { subject: 'Lunch', type: 'Break', room: 'Break' },
+                            '13:20-14:10': { subject: 'CS503', type: 'Theory', room: 'S20' },
+                            '14:10-15:00': { subject: 'CS508', type: 'Theory', room: 'B1+B3' }
+                        }
+                    }
+                };
+            }
+
+            loadAttendanceHistory() {
+                return JSON.parse(localStorage.getItem('attendanceHistory') || '{}');
+            }
+
+            saveAttendanceHistory() {
+                localStorage.setItem('attendanceHistory', JSON.stringify(this.attendanceHistory));
+            }
+
+            isValidRollNumber(rollNumber) {
+                return this.validRollNumbers.includes(rollNumber);
+            }
+
+            isDeviceRegistered() {
+                const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                return registeredDevices[this.deviceFingerprint] !== undefined;
+            }
+
+            registerDevice(userData) {
+                const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                registeredDevices[this.deviceFingerprint] = {
+                    rollNumber: userData.rollNumber,
+                    username: userData.username,
+                    section: userData.section,
+                    registrationDate: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+                localStorage.setItem('registeredDevices', JSON.stringify(registeredDevices));
+            }
+
+            getCurrentUser() {
+                const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                return registeredDevices[this.deviceFingerprint];
+            }
+
+            isLoggedIn() {
+                return localStorage.getItem('currentUser') !== null;
+            }
+
+            login(userData) {
+                localStorage.setItem('currentUser', JSON.stringify(userData));
+                this.registerDevice(userData);
+                this.currentSection = userData.section;
+                this.startNotificationSystem();
+            }
+
+            adminForceLogout(rollNumber = null) {
+                if (rollNumber) {
+                    // Force logout specific student
+                    const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                    for (let deviceId in registeredDevices) {
+                        if (registeredDevices[deviceId].rollNumber === rollNumber) {
+                            delete registeredDevices[deviceId];
+                            localStorage.setItem('registeredDevices', JSON.stringify(registeredDevices));
+                            break;
+                        }
+                    }
+                } else {
+                    // Clear current user only (admin logout)
+                    localStorage.removeItem('currentUser');
+                    this.stopNotificationSystem();
+                }
+            }
+
+            clearAllDeviceData() {
+                // Admin function to clear all device data
+                localStorage.clear();
+                location.reload();
+            }
+
+            startNotificationSystem() {
+                this.checkUpcomingClass();
+                this.checkAttendanceTime();
+                setInterval(() => {
+                    this.checkUpcomingClass();
+                    this.checkAttendanceTime();
+                }, 60000); // Check every minute
+            }
+
+            stopNotificationSystem() {
+                clearInterval(this.notificationInterval);
+            }
+
+            checkUpcomingClass() {
+                const now = new Date();
+                const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                const currentTime = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+                
+                if (this.timetableData[this.currentSection] && this.timetableData[this.currentSection][currentDay]) {
+                    const daySchedule = this.timetableData[this.currentSection][currentDay];
+                    
+                    for (let timeSlot in daySchedule) {
+                        const [startTime] = timeSlot.split('-');
+                        const [startHour, startMinute] = startTime.split(':').map(Number);
+                        const startDateTime = new Date();
+                        startDateTime.setHours(startHour, startMinute, 0);
+                        
+                        const timeDiff = startDateTime - now;
+                        const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+                        
+                        if (minutesDiff === 15) {
+                            const classInfo = daySchedule[timeSlot];
+                            this.showNotification(
+                                'Upcoming Class',
+                                `${classInfo.subject} (${classInfo.type}) starts in 15 minutes in ${classInfo.room}`,
+                                'upcoming'
+                            );
+                        } else if (minutesDiff === 5) {
+                            const classInfo = daySchedule[timeSlot];
+                            this.showNotification(
+                                'Class Starting Soon',
+                                `${classInfo.subject} (${classInfo.type}) starts in 5 minutes in ${classInfo.room}`,
+                                'urgent'
+                            );
+                        }
+                    }
+                }
+            }
+
+            checkAttendanceTime() {
+                const now = new Date();
+                const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                
+                if (this.timetableData[this.currentSection] && this.timetableData[this.currentSection][currentDay]) {
+                    const daySchedule = this.timetableData[this.currentSection][currentDay];
+                    
+                    for (let timeSlot in daySchedule) {
+                        const [startTime, endTime] = timeSlot.split('-');
+                        const [startHour, startMinute] = startTime.split(':').map(Number);
+                        const [endHour, endMinute] = endTime.split(':').map(Number);
+                        
+                        const startDateTime = new Date();
+                        startDateTime.setHours(startHour, startMinute, 0);
+                        
+                        const endDateTime = new Date();
+                        endDateTime.setHours(endHour, endMinute, 0);
+                        
+                        if (now >= startDateTime && now <= endDateTime) {
+                            const classInfo = daySchedule[timeSlot];
+                            if (classInfo.subject !== 'Lunch' && classInfo.subject !== 'Self Study') {
+                                this.showNotification(
+                                    'Mark Attendance',
+                                    `${classInfo.subject} class is ongoing. Don't forget to mark your attendance!`,
+                                    'attendance-time'
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            showNotification(title, message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+                    <h4><i class="fas ${type === 'upcoming' ? 'fa-clock' : type === 'urgent' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${title}</h4>
+                    <p>${message}</p>
+                `;
+                
+                document.getElementById('notificationContainer').appendChild(notification);
+                
+                // Auto remove after 10 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 10000);
+            }
+
+            getCurrentClass() {
+                const now = new Date();
+                const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                
+                if (this.timetableData[this.currentSection] && this.timetableData[this.currentSection][currentDay]) {
+                    const daySchedule = this.timetableData[this.currentSection][currentDay];
+                    
+                    for (let timeSlot in daySchedule) {
+                        const [startTime, endTime] = timeSlot.split('-');
+                        const [startHour, startMinute] = startTime.split(':').map(Number);
+                        const [endHour, endMinute] = endTime.split(':').map(Number);
+                        
+                        const startDateTime = new Date();
+                        startDateTime.setHours(startHour, startMinute, 0);
+                        
+                        const endDateTime = new Date();
+                        endDateTime.setHours(endHour, endMinute, 0);
+                        
+                        if (now >= startDateTime && now <= endDateTime) {
+                            return { ...daySchedule[timeSlot], timeSlot };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            getNextClass() {
+                const now = new Date();
+                const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                
+                if (this.timetableData[this.currentSection] && this.timetableData[this.currentSection][currentDay]) {
+                    const daySchedule = this.timetableData[this.currentSection][currentDay];
+                    
+                    for (let timeSlot in daySchedule) {
+                        const [startTime] = timeSlot.split('-');
+                        const [startHour, startMinute] = startTime.split(':').map(Number);
+                        
+                        const startDateTime = new Date();
+                        startDateTime.setHours(startHour, startMinute, 0);
+                        
+                        if (now < startDateTime) {
+                            return { ...daySchedule[timeSlot], timeSlot };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            updateCurrentAndNextClass() {
+                const currentClass = this.getCurrentClass();
+                const nextClass = this.getNextClass();
+                
+                const currentSubjectEl = document.getElementById('currentSubject');
+                const currentTimeEl = document.getElementById('currentTime');
+                const nextSubjectEl = document.getElementById('nextSubject');
+                const nextTimeEl = document.getElementById('nextTime');
+                
+                if (currentClass) {
+                    currentSubjectEl.textContent = `${currentClass.subject} (${currentClass.type})`;
+                    currentTimeEl.textContent = `${currentClass.timeSlot} | Room: ${currentClass.room}`;
+                } else {
+                    currentSubjectEl.textContent = 'No class currently';
+                    currentTimeEl.textContent = '-';
+                }
+                
+                if (nextClass) {
+                    nextSubjectEl.textContent = `${nextClass.subject} (${nextClass.type})`;
+                    nextTimeEl.textContent = `${nextClass.timeSlot} | Room: ${nextClass.room}`;
+                } else {
+                    nextSubjectEl.textContent = 'No more classes today';
+                    nextTimeEl.textContent = '-';
+                }
+            }
+
+            renderTimetable() {
+                const timetableContent = document.getElementById('timetableContent');
+                const sectionData = this.timetableData[this.currentSection];
+                
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                const timeSlots = ['09:10-10:00', '10:00-10:50', '10:50-11:40', '11:40-12:30', '12:30-13:20', '13:20-14:10', '14:10-15:00', '15:00-15:50'];
+                
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                ${days.map(day => `<th>${day}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                timeSlots.forEach(timeSlot => {
+                    tableHTML += `<tr>`;
+                    tableHTML += `<td class="time-slot">${timeSlot}</td>`;
+                    
+                    days.forEach(day => {
+                        const classInfo = sectionData[day] && sectionData[day][timeSlot];
+                        if (classInfo) {
+                            let cellClass = 'subject-cell';
+                            if (classInfo.subject === 'Lunch') {
+                                cellClass += ' lunch-break';
+                            }
+                            
+                            const now = new Date();
+                            const currentDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+                            
+                            if (day === currentDay) {
+                                const [startTime, endTime] = timeSlot.split('-');
+                                const [startHour, startMinute] = startTime.split(':').map(Number);
+                                const [endHour, endMinute] = endTime.split(':').map(Number);
+                                
+                                const startDateTime = new Date();
+                                startDateTime.setHours(startHour, startMinute, 0);
+                                
+                                const endDateTime = new Date();
+                                endDateTime.setHours(endHour, endMinute, 0);
+                                
+                                if (now >= startDateTime && now <= endDateTime) {
+                                    cellClass += ' current';
+                                } else if (now < startDateTime && (startDateTime - now) <= 3600000) { // Next hour
+                                    cellClass += ' upcoming';
+                                }
+                            }
+                            
+                            tableHTML += `
+                                <td class="${cellClass}">
+                                    <span class="subject-name">${classInfo.subject}</span>
+                                    <span class="subject-type">${classInfo.type}${classInfo.room !== '-' ? ' | ' + classInfo.room : ''}</span>
+                                </td>
+                            `;
+                        } else {
+                            tableHTML += `<td class="subject-cell">-</td>`;
+                        }
+                    });
+                    
+                    tableHTML += `</tr>`;
+                });
+                
+                tableHTML += `</tbody></table>`;
+                timetableContent.innerHTML = tableHTML;
+            }
+
+            renderAttendanceCalendar() {
+                const calendar = document.getElementById('attendanceCalendar');
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let calendarHTML = '';
+                
+                // Add day headers
+                const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                dayHeaders.forEach(day => {
+                    calendarHTML += `<div class="calendar-day" style="font-weight: bold; background: var(--primary); color: white;">${day}</div>`;
+                });
+                
+                // Add empty cells for days before the first day of the month
+                for (let i = 0; i < firstDay; i++) {
+                    calendarHTML += `<div class="calendar-day"></div>`;
+                }
+                
+                // Add days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    const dayAttendance = this.attendanceHistory[currentUser?.rollNumber]?.[dateStr];
+                    
+                    let dayClass = 'calendar-day';
+                    if (day === now.getDate() && month === now.getMonth()) {
+                        dayClass += ' today';
+                    }
+                    if (dayAttendance === 'present') {
+                        dayClass += ' present';
+                    } else if (dayAttendance === 'absent') {
+                        dayClass += ' absent';
+                    }
+                    
+                    calendarHTML += `<div class="${dayClass}" title="${dateStr}">${day}</div>`;
+                }
+                
+                calendar.innerHTML = calendarHTML;
+            }
+
+            renderSubjectAttendance() {
+                const tableBody = document.getElementById('subjectAttendanceTable');
+                const subjects = ['CS501', 'CS502', 'CS503', 'CS504', 'CS505', 'CS506', 'CS507', 'CS508'];
+                
+                let tableHTML = '';
+                subjects.forEach(subject => {
+                    // Mock data - in real implementation, this would come from actual attendance records
+                    const present = Math.floor(Math.random() * 30) + 10;
+                    const total = present + Math.floor(Math.random() * 10);
+                    const percentage = ((present / total) * 100).toFixed(1);
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>${subject}</td>
+                            <td class="text-success fw-bold">${present}</td>
+                            <td>${total}</td>
+                            <td>
+                                <span class="status-badge ${percentage >= 75 ? 'status-present' : percentage >= 60 ? 'status-late' : 'status-absent'}">
+                                    ${percentage}%
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tableBody.innerHTML = tableHTML;
+            }
+
+            init() {
+                this.updateTime();
+                this.checkDeviceAndLogin();
+                setInterval(() => {
+                    this.updateTime();
+                    this.updateCurrentAndNextClass();
+                }, 1000);
+            }
+
+            checkDeviceAndLogin() {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                
+                if (currentUser && this.isDeviceRegistered()) {
+                    // User is logged in and device is registered
+                    if (currentUser.role === 'admin') {
+                        this.showAdminDashboard();
+                    } else {
+                        this.currentSection = currentUser.section;
+                        this.showStudentDashboard(currentUser);
+                        this.startNotificationSystem();
+                    }
+                } else if (this.isDeviceRegistered() && !currentUser) {
+                    // Device is registered but no current session
+                    const userData = this.getCurrentUser();
+                    this.currentSection = userData.section;
+                    this.showStudentDashboard(userData);
+                    localStorage.setItem('currentUser', JSON.stringify({...userData, role: 'student'}));
+                    this.startNotificationSystem();
+                } else {
+                    // Show auth form
+                    this.showAuthContainer();
+                }
+            }
+
+            showAuthContainer() {
+                document.getElementById('authContainer').classList.remove('hidden');
+                document.getElementById('studentDashboard').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('deviceWarning').classList.add('hidden');
+            }
+
+            showStudentDashboard(userData) {
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('studentDashboard').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('deviceWarning').classList.add('hidden');
+
+                // Update user info
+                document.getElementById('userName').textContent = userData.username;
+                document.getElementById('userRoll').textContent = userData.rollNumber;
+                document.getElementById('userSection').textContent = `Section ${userData.section}`;
+                document.getElementById('userAvatar').textContent = userData.username.charAt(0).toUpperCase();
+                
+                // Update current section
+                this.currentSection = userData.section;
+                
+                // Render dynamic content
+                this.renderTimetable();
+                this.updateCurrentAndNextClass();
+                this.renderAttendanceCalendar();
+                this.renderSubjectAttendance();
+            }
+
+            showAdminDashboard() {
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('studentDashboard').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                document.getElementById('deviceWarning').classList.add('hidden');
+                
+                this.loadRegisteredStudents();
+                this.loadAdminStats();
+            }
+
+            showDeviceWarning() {
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('studentDashboard').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('deviceWarning').classList.remove('hidden');
+            }
+
+            updateTime() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    hour12: true,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const timeElement = document.getElementById('currentTime');
+                if (timeElement) {
+                    timeElement.textContent = timeString;
+                }
+            }
+
+            loadRegisteredStudents() {
+                const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                const tbody = document.getElementById('studentTableBody');
+                tbody.innerHTML = '';
+
+                Object.entries(registeredDevices).forEach(([deviceId, userData]) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${userData.rollNumber}</td>
+                        <td>${userData.username}</td>
+                        <td>Section ${userData.section}</td>
+                        <td>${deviceId.substring(0, 12)}...</td>
+                        <td>${new Date(userData.registrationDate).toLocaleDateString()}</td>
+                        <td>${new Date(userData.lastLogin).toLocaleDateString()}</td>
+                        <td><span class="status-badge status-present">Active</span></td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="attendanceSystem.adminForceLogout('${userData.rollNumber}'); attendanceSystem.loadRegisteredStudents();">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Force Logout
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            loadAdminStats() {
+                const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+                const totalStudents = Object.keys(registeredDevices).length;
+                
+                document.getElementById('totalStudents').textContent = Math.max(totalStudents, 40);
+                document.getElementById('activeStudents').textContent = totalStudents;
+            }
+
+            markAttendance(status = 'present') {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (!currentUser) return;
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                if (!this.attendanceHistory[currentUser.rollNumber]) {
+                    this.attendanceHistory[currentUser.rollNumber] = {};
+                }
+                
+                this.attendanceHistory[currentUser.rollNumber][today] = status;
+                this.saveAttendanceHistory();
+                
+                // Update stats
+                this.updateAttendanceStats();
+                this.renderAttendanceCalendar();
+            }
+
+            updateAttendanceStats() {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (!currentUser) return;
+                
+                const userAttendance = this.attendanceHistory[currentUser.rollNumber] || {};
+                const presentDays = Object.values(userAttendance).filter(status => status === 'present').length;
+                const totalDays = Object.keys(userAttendance).length;
+                const absentDays = totalDays - presentDays;
+                const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+                
+                document.getElementById('totalPresent').textContent = presentDays;
+                document.getElementById('totalAbsent').textContent = absentDays;
+                document.getElementById('totalClasses').textContent = totalDays;
+                document.getElementById('attendancePercentage').textContent = percentage + '%';
+            }
+        }
+
+        // Initialize the attendance system
+        const attendanceSystem = new AttendanceSystem();
+
+        // Tab switching functions
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        function switchDashboardTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(tp => tp.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchDashboardTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            
+            if (tab === 'timetable') {
+                attendanceSystem.renderTimetable();
+            } else if (tab === 'history') {
+                attendanceSystem.renderAttendanceCalendar();
+                attendanceSystem.renderSubjectAttendance();
+            }
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(tp => tp.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchAdminTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`).classList.add('active');
+            
+            if (tab === 'students') {
+                attendanceSystem.loadRegisteredStudents();
+            }
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.section-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`section${section}`).classList.add('active');
+            attendanceSystem.currentSection = section;
+            attendanceSystem.renderTimetable();
+        }
+
+        // Student authentication
+        function handleStudentAuth(event) {
+            event.preventDefault();
+            
+            const rollNumber = document.getElementById('rollNumber').value;
+            const section = document.getElementById('studentSection').value;
+            const username = document.getElementById('studentUsername').value;
+            const password = document.getElementById('studentPassword').value;
+
+            // Validate roll number
+            if (!attendanceSystem.isValidRollNumber(rollNumber)) {
+                showAlert('Invalid roll number. Only 0902CS231001-0902CS231040 are allowed.', 'danger');
+                return;
+            }
+
+            // Validate section
+            if (!section) {
+                showAlert('Please select your section.', 'danger');
+                return;
+            }
+
+            // Check if device is already registered with different roll number
+            if (attendanceSystem.isDeviceRegistered()) {
+                const currentDeviceUser = attendanceSystem.getCurrentUser();
+                if (currentDeviceUser.rollNumber !== rollNumber) {
+                    attendanceSystem.showDeviceWarning();
+                    return;
+                }
+            }
+
+            // Simple password validation
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters long.', 'danger');
+                return;
+            }
+
+            // Login successful
+            const userData = { rollNumber, username, section, role: 'student' };
+            attendanceSystem.login(userData);
+            attendanceSystem.showStudentDashboard(userData);
+            showAlert('Login successful! Welcome to the attendance system.', 'success');
+        }
+
+        // Admin authentication
+        function handleAdminAuth(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+
+            // Updated admin authentication with new password
+            if (username === 'admin' && password === 'ShiroOni') {
+                const userData = { username, role: 'admin' };
+                localStorage.setItem('currentUser', JSON.stringify(userData));
+                attendanceSystem.showAdminDashboard();
+                showAlert('Admin login successful!', 'success');
+            } else {
+                showAlert('Invalid admin credentials.', 'danger');
+            }
+        }
+
+        // Admin logout
+        function adminLogout() {
+            attendanceSystem.adminForceLogout();
+            attendanceSystem.showAuthContainer();
+            showAlert('Admin logged out successfully.', 'success');
+        }
+
+        // Clear device data (admin only)
+        function clearDeviceData() {
+            const password = prompt('Enter admin password to clear device data:');
+            if (password === 'ShiroOni') {
+                attendanceSystem.clearAllDeviceData();
+            } else {
+                showAlert('Invalid admin password.', 'danger');
+            }
+        }
+
+        // QR Scanner simulation with attendance marking
+        function scanQR() {
+            const scanner = document.getElementById('qrScanner');
+            scanner.classList.add('scanning');
+            
+            // Simulate scanning
+            setTimeout(() => {
+                scanner.classList.remove('scanning');
+                
+                // Mark attendance
+                attendanceSystem.markAttendance('present');
+                showAlert('Attendance marked successfully!', 'success');
+                
+                // Update current and next class info
+                attendanceSystem.updateCurrentAndNextClass();
+                
+            }, 2000);
+        }
+
+        // Admin functions
+        function exportStudentData() {
+            const registeredDevices = JSON.parse(localStorage.getItem('registeredDevices') || '{}');
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + "Roll Number,Username,Section,Device ID,Registration Date,Last Login\n"
+                + Object.entries(registeredDevices).map(([deviceId, userData]) => 
+                    `${userData.rollNumber},${userData.username},${userData.section},${deviceId.substring(0, 12)}...,${new Date(userData.registrationDate).toLocaleDateString()},${new Date(userData.lastLogin).toLocaleDateString()}`
+                ).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "student_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAlert('Student data exported successfully!', 'success');
+        }
+
+        function bulkLogout() {
+            if (confirm('Are you sure you want to logout all students?')) {
+                localStorage.removeItem('registeredDevices');
+                localStorage.removeItem('currentUser');
+                attendanceSystem.loadRegisteredStudents();
+                showAlert('All students have been logged out.', 'success');
+            }
+        }
+
+        function generateQRCode() {
+            const classSelector = document.getElementById('classSelector');
+            const qrDisplay = document.getElementById('qrCodeDisplay');
+            
+            if (!classSelector.value) {
+                showAlert('Please select a class first.', 'warning');
+                return;
+            }
+            
+            // Simulate QR code generation
+            qrDisplay.innerHTML = `
+                <div class="icon">
+                    <i class="fas fa-qrcode" style="color: var(--success);"></i>
+                </div>
+                <h4 style="color: var(--success);">QR Code Generated</h4>
+                <p>Class: ${classSelector.value}</p>
+                <p style="font-size: 0.8rem; color: var(--muted);">Students can scan this code to mark attendance</p>
+            `;
+            
+            showAlert('QR code generated for ' + classSelector.value, 'success');
+        }
+
+        function markManualAttendance() {
+            const rollNumber = document.getElementById('manualRollNumber').value;
+            const status = document.getElementById('attendanceStatus').value;
+            
+            if (!rollNumber) {
+                showAlert('Please enter a roll number.', 'warning');
+                return;
+            }
+            
+            if (!attendanceSystem.isValidRollNumber(rollNumber)) {
+                showAlert('Invalid roll number.', 'danger');
+                return;
+            }
+            
+            // Mark attendance for the student
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (!attendanceSystem.attendanceHistory[rollNumber]) {
+                attendanceSystem.attendanceHistory[rollNumber] = {};
+            }
+            
+            attendanceSystem.attendanceHistory[rollNumber][today] = status;
+            attendanceSystem.saveAttendanceHistory();
+            
+            showAlert(`Attendance marked as ${status} for ${rollNumber}`, 'success');
+            
+            // Clear form
+            document.getElementById('manualRollNumber').value = '';
+        }
+
+        function addClass() {
+            const subjectCode = document.getElementById('newSubjectCode').value;
+            const subjectName = document.getElementById('newSubjectName').value;
+            const classType = document.getElementById('newClassType').value;
+            
+            if (!subjectCode || !subjectName) {
+                showAlert('Please fill in all fields.', 'warning');
+                return;
+            }
+            
+            showAlert(`Class ${subjectCode} - ${subjectName} (${classType}) added successfully!`, 'success');
+            
+            // Clear form
+            document.getElementById('newSubjectCode').value = '';
+            document.getElementById('newSubjectName').value = '';
+        }
+
+        function generateAttendanceReport() {
+            const reportOutput = document.getElementById('reportOutput');
+            reportOutput.innerHTML = `
+                <div class="card">
+                    <h4><i class="fas fa-chart-bar"></i> Attendance Report Generated</h4>
+                    <p>Report contains attendance data for all students across all subjects.</p>
+                    <p><strong>Date Range:</strong> Current Month</p>
+                    <p><strong>Total Records:</strong> 1,200 attendance entries</p>
+                    <p><strong>Average Attendance:</strong> 87.5%</p>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary btn-sm">Download PDF</button>
+                        <button class="btn btn-secondary btn-sm">Download Excel</button>
+                    </div>
+                </div>
+            `;
+            showAlert('Attendance report generated successfully!', 'success');
+        }
+
+        function generateStudentReport() {
+            showAlert('Student report generated successfully!', 'success');
+        }
+
+        function generateClassReport() {
+            showAlert('Class report generated successfully!', 'success');
+        }
+
+        // Theme toggle
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle span');
+            
+            if (body.dataset.theme === 'dark') {
+                body.dataset.theme = 'light';
+                themeToggle.textContent = 'Dark Mode';
+                document.querySelector('.theme-toggle i').className = 'fas fa-moon';
+            } else {
+                body.dataset.theme = 'dark';
+                themeToggle.textContent = 'Light Mode';
+                document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+            }
+        }
+
+        // Alert system
+        function showAlert(message, type = 'info') {
+            // Remove existing alerts
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // Create new alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="alert-icon fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                ${message}
+            `;
+
+            // Insert at the beginning of container
+            const container = document.querySelector('.container');
+            container.insertBefore(alert, container.firstChild.nextSibling);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Initialize class selector for admin
+        document.addEventListener('DOMContentLoaded', function() {
+            const classSelector = document.getElementById('classSelector');
+            if (classSelector) {
+                const subjects = ['CS501 - Software Engineering', 'CS502 - Database Systems', 'CS503 - Computer Networks', 'CS504 - Web Technology', 'CS505 - Network Security', 'CS506 - System Programming', 'CS507 - Machine Learning', 'CS508 - Mobile Computing'];
+                
+                subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    classSelector.appendChild(option);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
