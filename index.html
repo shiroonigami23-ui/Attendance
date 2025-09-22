@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Attendance System - RJIT BSF Academy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            text-align: center;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .dashboard {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f7fafc;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #edf2f7;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #4299e1;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .stats-card {
+            text-align: center;
+        }
+
+        .stats-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stats-card .label {
+            color: #718096;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .success { color: #48bb78; }
+        .warning { color: #ed8936; }
+        .danger { color: #f56565; }
+        .primary { color: #4299e1; }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #edf2f7;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ed8936, #dd6b20);
+        }
+
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #f56565, #e53e3e);
+        }
+
+        .class-card {
+            border-left: 4px solid #4299e1;
+            position: relative;
+        }
+
+        .class-card.active {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .class-card.closed {
+            border-left-color: #a0aec0;
+            opacity: 0.7;
+        }
+
+        .class-time {
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .class-subject {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .class-room {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #48bb78;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-upcoming {
+            background: #ed8936;
+            color: white;
+        }
+
+        .status-closed {
+            background: #a0aec0;
+            color: white;
+        }
+
+        .status-present {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-absent {
+            background: #f56565;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #22543d;
+        }
+
+        .alert-danger {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #742a2a;
+        }
+
+        .alert-warning {
+            background: #fefcbf;
+            border: 1px solid #f6e05e;
+            color: #744210;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            border: 1px solid #90cdf4;
+            color: #2a4365;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .current-time {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #4299e1;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .grid-4 {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4299e1;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .export-btn {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎓 Campus Attendance System</h1>
+            <p>RJIT - BSF Academy, Tekanpur | Department of Computer Science & Engineering</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authSection">
+            <div class="auth-container">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('student-login')">Student Login</button>
+                    <button class="tab" onclick="switchTab('admin-login')">Admin Login</button>
+                    <button class="tab" onclick="switchTab('student-register')">Student Register</button>
+                </div>
+
+                <!-- Student Login -->
+                <div id="student-login" class="tab-content active">
+                    <form onsubmit="handleStudentLogin(event)">
+                        <div class="form-group">
+                            <label for="studentRoll">Roll Number</label>
+                            <input type="text" id="studentRoll" placeholder="Enter your roll number" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Login as Student</button>
+                    </form>
+                </div>
+
+                <!-- Admin Login -->
+                <div id="admin-login" class="tab-content">
+                    <form onsubmit="handleAdminLogin(event)">
+                        <div class="form-group">
+                            <label for="adminUsername">Username</label>
+                            <input type="text" id="adminUsername" placeholder="Enter admin username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPassword">Password</label>
+                            <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Login as Admin</button>
+                    </form>
+                </div>
+
+                <!-- Student Registration -->
+                <div id="student-register" class="tab-content">
+                    <form onsubmit="handleStudentRegister(event)">
+                        <div class="form-group">
+                            <label for="registerRoll">Roll Number</label>
+                            <input type="text" id="registerRoll" placeholder="Enter your roll number" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerName">Full Name</label>
+                            <input type="text" id="registerName" placeholder="Enter your full name" required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-full">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Dashboard -->
+        <div id="studentDashboard" class="hidden">
+            <div class="dashboard">
+                <div class="user-info">
+                    <div>
+                        <h2>Welcome, <span id="studentName"></span></h2>
+                        <p>Roll Number: <span id="studentRoll"></span></p>
+                    </div>
+                    <div class="current-time" id="currentTime"></div>
+                    <button class="btn btn-danger logout-btn" onclick="logout()">Logout</button>
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <!-- Today's Classes -->
+                <h3>Today's Classes - <span id="currentDay"></span></h3>
+                <div class="grid grid-3" id="todayClasses"></div>
+
+                <!-- Attendance Overview -->
+                <h3 style="margin-top: 40px;">Attendance Overview</h3>
+                <div class="grid grid-4">
+                    <div class="card stats-card">
+                        <div class="number success" id="overallPercentage">0%</div>
+                        <div class="label">Overall Attendance</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number primary" id="todayClasses">0</div>
+                        <div class="label">Classes Today</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number success" id="presentToday">0</div>
+                        <div class="label">Present Today</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number warning" id="pathTo75">0</div>
+                        <div class="label">Classes to 75%</div>
+                    </div>
+                </div>
+
+                <!-- Subject-wise Attendance -->
+                <h3 style="margin-top: 40px;">Subject-wise Attendance</h3>
+                <div class="card">
+                    <div class="table-container">
+                        <table id="subjectAttendanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Code</th>
+                                    <th>Total Classes</th>
+                                    <th>Present</th>
+                                    <th>Percentage</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectAttendanceBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="hidden">
+            <div class="dashboard">
+                <div class="user-info">
+                    <div>
+                        <h2>Admin Dashboard</h2>
+                        <p>Attendance Management System</p>
+                    </div>
+                    <div class="current-time" id="adminCurrentTime"></div>
+                    <button class="btn btn-danger logout-btn" onclick="logout()">Logout</button>
+                </div>
+
+                <!-- Admin Stats -->
+                <div class="grid grid-4">
+                    <div class="card stats-card">
+                        <div class="number primary" id="totalStudents">156</div>
+                        <div class="label">Total Students</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number success" id="adminPresentToday">0</div>
+                        <div class="label">Present Today</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number danger" id="adminAbsentToday">0</div>
+                        <div class="label">Absent Today</div>
+                    </div>
+                    <div class="card stats-card">
+                        <div class="number warning" id="averageAttendance">0%</div>
+                        <div class="label">Average Attendance</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Filters & Reports</h3>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filterDate">Date</label>
+                            <input type="date" id="filterDate" onchange="applyFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterSubject">Subject</label>
+                            <select id="filterSubject" onchange="applyFilters()">
+                                <option value="">All Subjects</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterRoll">Roll Number</label>
+                            <input type="text" id="filterRoll" placeholder="Enter roll number" onchange="applyFilters()">
+                        </div>
+                        <button class="btn btn-success export-btn" onclick="exportCSV()">📥 Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Attendance Records -->
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Attendance Records</h3>
+                    <div class="table-container">
+                        <table id="attendanceRecordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Roll Number</th>
+                                    <th>Student Name</th>
+                                    <th>Subject</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceRecordsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let currentUser = null;
+        let students = JSON.parse(localStorage.getItem('students') || '{}');
+        let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords') || '[]');
+        
+        // Timetable data based on the provided image
+        const timetable = {
+            'Monday': [
+                { id: 'mon1', subject: 'CS501', name: 'Operating Systems', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'mon2', subject: 'CS502', name: 'Database Systems', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'mon3', subject: 'CS503', name: 'Software Engineering', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'mon4', subject: 'CS504', name: 'Computer Networks', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'mon5', subject: 'CS505', name: 'Data Structures', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'mon6', subject: 'CS506', name: 'Algorithms', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+            ],
+            'Tuesday': [
+                { id: 'tue1', subject: 'CS502', name: 'Database Systems', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'tue2', subject: 'CS504', name: 'Computer Networks', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'tue3', subject: 'CS501', name: 'Operating Systems', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'tue4', subject: 'CS506', name: 'Algorithms', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'tue5', subject: 'CS503', name: 'Software Engineering', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'tue6', subject: 'CS505', name: 'Data Structures', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+            ],
+            'Wednesday': [
+                { id: 'wed1', subject: 'CS505', name: 'Data Structures', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'wed2', subject: 'CS501', name: 'Operating Systems', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'wed3', subject: 'CS506', name: 'Algorithms', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'wed4', subject: 'CS502', name: 'Database Systems', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'wed5', subject: 'CS504', name: 'Computer Networks', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'wed6', subject: 'CS503', name: 'Software Engineering', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+            ],
+            'Thursday': [
+                { id: 'thu1', subject: 'CS503', name: 'Software Engineering', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'thu2', subject: 'CS505', name: 'Data Structures', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'thu3', subject: 'CS502', name: 'Database Systems', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'thu4', subject: 'CS501', name: 'Operating Systems', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'thu5', subject: 'CS506', name: 'Algorithms', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'thu6', subject: 'CS504', name: 'Computer Networks', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+            ],
+            'Friday': [
+                { id: 'fri1', subject: 'CS506', name: 'Algorithms', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'fri2', subject: 'CS503', name: 'Software Engineering', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'fri3', subject: 'CS504', name: 'Computer Networks', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'fri4', subject: 'CS505', name: 'Data Structures', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'fri5', subject: 'CS501', name: 'Operating Systems', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'fri6', subject: 'CS502', name: 'Database Systems', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+            ]
+        };
+
+        const subjects = {
+            'CS501': 'Operating Systems',
+            'CS502': 'Database Systems', 
+            'CS503': 'Software Engineering',
+            'CS504': 'Computer Networks',
+            'CS505': 'Data Structures',
+            'CS506': 'Algorithms'
+        };
+
+        // Admin credentials
+        const adminCredentials = {
+            username: 'admin',
+            password: 'ShiroOni'
+        };
+
+        // Utility Functions
+        function getCurrentDay() {
+            return new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        }
+
+        function getCurrentTime() {
+            return new Date().toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function isValidCampusIP() {
+            // For demo purposes, always return true
+            // In production, implement proper IP validation
+            return true;
+        }
+
+        function getAttendanceWindowStatus(classItem) {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const endMinutes = timeToMinutes(classItem.endTime);
+            const windowStart = endMinutes - 10; // 10 minutes before class ends
+            const windowEnd = endMinutes + 5;   // 5 minutes after class ends
+
+            if (currentMinutes < windowStart) return 'upcoming';
+            if (currentMinutes >= windowStart && currentMinutes <= windowEnd) return 'active';
+            return 'closed';
+        }
+
+        // UI Functions
+        function switchTab(tabId) {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function updateTime() {
+            const timeElements = document.querySelectorAll('.current-time');
+            timeElements.forEach(element => {
+                element.textContent = getCurrentTime();
+            });
+        }
+
+        // Authentication Functions
+        function handleStudentLogin(event) {
+            event.preventDefault();
+            const rollNumber = document.getElementById('studentRoll').value.trim();
+            
+            if (!rollNumber) {
+                showAlert('Please enter your roll number', 'danger');
+                return;
+            }
+
+            if (!isValidCampusIP()) {
+                showAlert('Attendance can only be marked from campus network', 'danger');
+                return;
+            }
+
+            if (students[rollNumber]) {
+                currentUser = { 
+                    type: 'student', 
+                    rollNumber, 
+                    name: students[rollNumber].name 
+                };
+                showStudentDashboard();
+            } else {
+                showAlert('Roll number not found. Please register first.', 'danger');
+            }
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+            
+            if (username === adminCredentials.username && password === adminCredentials.password) {
+                currentUser = { type: 'admin' };
+                showAdminDashboard();
+            } else {
+                showAlert('Invalid admin credentials', 'danger');
+            }
+        }
+
+        function handleStudentRegister(event) {
+            event.preventDefault();
+            const rollNumber = document.getElementById('registerRoll').value.trim();
+            const name = document.getElementById('registerName').value.trim();
+            
+            if (!rollNumber || !name) {
+                showAlert('Please fill in all fields', 'danger');
+                return;
+            }
+
+            if (students[rollNumber]) {
+                showAlert('Roll number already registered', 'danger');
+                return;
+            }
+
+            students[rollNumber] = { name, registeredAt: new Date().toISOString() };
+            localStorage.setItem('students', JSON.stringify(students));
+            
+            showAlert('Registration successful! You can now login.', 'success');
+            
+            // Switch to student login tab
+            switchTab('student-login');
+            document.getElementById('studentRoll').value = rollNumber;
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('studentDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            
+            // Clear forms
+            document.querySelectorAll('input').forEach(input => input.value = '');
+        }
+
+        // Student Dashboard Functions
+        function showStudentDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('studentDashboard').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            
+            document.getElementById('studentName').textContent = currentUser.name;
+            document.getElementById('studentRoll').textContent = currentUser.rollNumber;
+            document.getElementById('currentDay').textContent = getCurrentDay();
+            
+            loadTodayClasses();
+            loadStudentStats();
+            loadSubjectAttendance();
+        }
+
+        function loadTodayClasses() {
+            const today = getCurrentDay();
+            const todaySchedule = timetable[today] || [];
+            const container = document.getElementById('todayClasses');
+            
+            container.innerHTML = '';
+            
+            todaySchedule.forEach(classItem => {
+                const status = getAttendanceWindowStatus(classItem);
+                const isMarked = isAttendanceMarked(classItem.id);
+                
+                const card = document.createElement('div');
+                card.className = `card class-card ${status}`;
+                
+                const statusBadge = isMarked ? 'present' : status;
+                const statusText = isMarked ? 'Present' : 
+                                 status === 'active' ? 'Mark Now' :
+                                 status === 'upcoming' ? 'Upcoming' : 'Closed';
+                
+                card.innerHTML = `
+                    <div class="status-badge status-${statusBadge}">${statusText}</div>
+                    <div class="class-time">${classItem.startTime} - ${classItem.endTime}</div>
+                    <div class="class-subject">${classItem.name}</div>
+                    <div class="class-room">${classItem.subject} | ${classItem.room}</div>
+                    ${status === 'active' && !isMarked ? 
+                        `<button class="btn btn-success btn-full" style="margin-top: 15px;" 
+                                onclick="markAttendance('${classItem.id}')">
+                            Mark Present
+                        </button>` : ''}
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            document.getElementById('todayClasses').textContent = todaySchedule.length;
+        }
+
+        function isAttendanceMarked(classId) {
+            const today = getTodayDate();
+            return attendanceRecords.some(record => 
+                record.rollNumber === currentUser.rollNumber && 
+                record.classId === classId && 
+                record.date === today
+            );
+        }
+
+        function markAttendance(classId) {
+            if (!isValidCampusIP()) {
+                showAlert('Attendance can only be marked from campus network', 'danger');
+                return;
+            }
+
+            const today = getCurrentDay();
+            const todaySchedule = timetable[today] || [];
+            const classItem = todaySchedule.find(c => c.id === classId);
+            
+            if (!classItem) return;
+
+            const status = getAttendanceWindowStatus(classItem);
+            if (status !== 'active') {
+                showAlert('Attendance window is not active for this class', 'warning');
+                return;
+            }
+
+            const record = {
+                rollNumber: currentUser.rollNumber,
+                studentName: currentUser.name,
+                classId,
+                subject: classItem.subject,
+                subjectName: classItem.name,
+                date: getTodayDate(),
+                time: new Date().toLocaleTimeString(),
+                status: 'present',
+                timestamp: new Date().toISOString()
+            };
+
+            attendanceRecords.push(record);
+            localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+            
+            showAlert(`Attendance marked successfully for ${classItem.name}`, 'success');
+            loadTodayClasses();
+            loadStudentStats();
+            loadSubjectAttendance();
+        }
+
+        function loadStudentStats() {
+            const studentRecords = attendanceRecords.filter(r => r.rollNumber === currentUser.rollNumber);
+            const today = getTodayDate();
+            const todayRecords = studentRecords.filter(r => r.date === today);
+            
+            document.getElementById('presentToday').textContent = todayRecords.length;
+            
+            // Calculate overall attendance percentage
+            const subjectStats = {};
+            studentRecords.forEach(record => {
+                if (!subjectStats[record.subject]) {
+                    subjectStats[record.subject] = { total: 0, present: 0 };
+                }
+                subjectStats[record.subject].total++;
+                if (record.status === 'present') {
+                    subjectStats[record.subject].present++;
+                }
+            });
+
+            let totalPercentage = 0;
+            let subjectCount = 0;
+            
+            Object.values(subjectStats).forEach(stat => {
+                if (stat.total > 0) {
+                    totalPercentage += (stat.present / stat.total) * 100;
+                    subjectCount++;
+                }
+            });
+
+            const overallPercentage = subjectCount > 0 ? totalPercentage / subjectCount : 0;
+            document.getElementById('overallPercentage').textContent = `${overallPercentage.toFixed(1)}%`;
+
+            // Calculate classes needed to reach 75%
+            let classesTo75 = 0;
+            Object.values(subjectStats).forEach(stat => {
+                if (stat.total > 0) {
+                    const currentPercentage = (stat.present / stat.total) * 100;
+                    if (currentPercentage < 75) {
+                        const needed = Math.ceil((0.75 * stat.total - stat.present) / 0.25);
+                        classesTo75 += Math.max(0, needed);
+                    }
+                }
+            });
+
+            document.getElementById('pathTo75').textContent = classesTo75;
+        }
+
+        function loadSubjectAttendance() {
+            const studentRecords = attendanceRecords.filter(r => r.rollNumber === currentUser.rollNumber);
+            const subjectStats = {};
+            
+            // Initialize all subjects
+            Object.keys(subjects).forEach(subjectCode => {
+                subjectStats[subjectCode] = {
+                    code: subjectCode,
+                    name: subjects[subjectCode],
+                    total: 0,
+                    present: 0
+                };
+            });
+
+            studentRecords.forEach(record => {
+                if (subjectStats[record.subject]) {
+                    subjectStats[record.subject].total++;
+                    if (record.status === 'present') {
+                        subjectStats[record.subject].present++;
+                    }
+                }
+            });
+
+            const tbody = document.getElementById('subjectAttendanceBody');
+            tbody.innerHTML = '';
+
+            Object.values(subjectStats).forEach(stat => {
+                const percentage = stat.total > 0 ? (stat.present / stat.total) * 100 : 0;
+                const status = percentage >= 85 ? 'Excellent' :
+                              percentage >= 75 ? 'Good' :
+                              percentage >= 60 ? 'Average' : 'Low';
+                
+                const statusClass = percentage >= 85 ? 'success' :
+                                  percentage >= 75 ? 'primary' :
+                                  percentage >= 60 ? 'warning' : 'danger';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.name}</td>
+                    <td>${stat.code}</td>
+                    <td>${stat.total}</td>
+                    <td>${stat.present}</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${statusClass === 'danger' ? 'danger' : statusClass === 'warning' ? 'warning' : ''}" 
+                                 style="width: ${percentage}%"></div>
+                        </div>
+                        <strong class="${statusClass}">${percentage.toFixed(1)}%</strong>
+                    </td>
+                    <td><span class="status-badge status-${statusClass.toLowerCase()}">${status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Admin Dashboard Functions
+        function showAdminDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('studentDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            
+            document.getElementById('filterDate').value = getTodayDate();
+            
+            loadSubjectOptions();
+            loadAdminStats();
+            loadAttendanceRecords();
+        }
+
+        function loadSubjectOptions() {
+            const select = document.getElementById('filterSubject');
+            select.innerHTML = '<option value="">All Subjects</option>';
+            
+            Object.entries(subjects).forEach(([code, name]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = `${code} - ${name}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadAdminStats() {
+            const today = getTodayDate();
+            const todayRecords = attendanceRecords.filter(r => r.date === today);
+            const presentToday = todayRecords.filter(r => r.status === 'present').length;
+            const absentToday = todayRecords.filter(r => r.status === 'absent').length;
+            const averageAttendance = todayRecords.length > 0 ? (presentToday / todayRecords.length) * 100 : 0;
+            
+            document.getElementById('adminPresentToday').textContent = presentToday;
+            document.getElementById('adminAbsentToday').textContent = absentToday;
+            document.getElementById('averageAttendance').textContent = `${averageAttendance.toFixed(1)}%`;
+        }
+
+        function applyFilters() {
+            loadAttendanceRecords();
+        }
+
+        function loadAttendanceRecords() {
+            const filterDate = document.getElementById('filterDate').value;
+            const filterSubject = document.getElementById('filterSubject').value;
+            const filterRoll = document.getElementById('filterRoll').value.trim();
+            
+            let filteredRecords = attendanceRecords;
+            
+            if (filterDate) {
+                filteredRecords = filteredRecords.filter(r => r.date === filterDate);
+            }
+            
+            if (filterSubject) {
+                filteredRecords = filteredRecords.filter(r => r.subject === filterSubject);
+            }
+            
+            if (filterRoll) {
+                filteredRecords = filteredRecords.filter(r => 
+                    r.rollNumber.toLowerCase().includes(filterRoll.toLowerCase())
+                );
+            }
+
+            const tbody = document.getElementById('attendanceRecordsBody');
+            tbody.innerHTML = '';
+
+            if (filteredRecords.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" style="text-align: center; color: #718096;">No attendance records found</td>';
+                tbody.appendChild(row);
+                return;
+            }
+
+            filteredRecords.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.rollNumber}</td>
+                    <td>${record.studentName}</td>
+                    <td>${record.subjectName} (${record.subject})</td>
+                    <td>${record.date}</td>
+                    <td>${record.time}</td>
+                    <td><span class="status-badge status-${record.status}">${record.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function exportCSV() {
+            const filterDate = document.getElementById('filterDate').value;
+            const filterSubject = document.getElementById('filterSubject').value;
+            const filterRoll = document.getElementById('filterRoll').value.trim();
+            
+            let filteredRecords = attendanceRecords;
+            
+            if (filterDate) {
+                filteredRecords = filteredRecords.filter(r => r.date === filterDate);
+            }
+            
+            if (filterSubject) {
+                filteredRecords = filteredRecords.filter(r => r.subject === filterSubject);
+            }
+            
+            if (filterRoll) {
+                filteredRecords = filteredRecords.filter(r => 
+                    r.rollNumber.toLowerCase().includes(filterRoll.toLowerCase())
+                );
+            }
+
+            if (filteredRecords.length === 0) {
+                showAlert('No records to export', 'warning');
+                return;
+            }
+
+            const csvContent = [
+                ['Roll Number', 'Student Name', 'Subject', 'Date', 'Time', 'Status'].join(','),
+                ...filteredRecords.map(record => [
+                    record.rollNumber,
+                    record.studentName,
+                    `${record.subjectName} (${record.subject})`,
+                    record.date,
+                    record.time,
+                    record.status
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-report-${filterDate || 'all'}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showAlert('Report exported successfully', 'success');
+        }
+
+        // Initialize
+        function init() {
+            // Update time every second
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // Auto-refresh today's classes every minute for students
+            setInterval(() => {
+                if (currentUser && currentUser.type === 'student') {
+                    loadTodayClasses();
+                }
+            }, 60000);
+            
+            // Load initial data
+            if (Object.keys(students).length === 0) {
+                // Add some demo students
+                const demoStudents = {
+                    'CS2021001': { name: 'Rajesh Kumar', registeredAt: new Date().toISOString() },
+                    'CS2021002': { name: 'Priya Sharma', registeredAt: new Date().toISOString() },
+                    'CS2021003': { name: 'Amit Singh', registeredAt: new Date().toISOString() },
+                    'CS2021004': { name: 'Sneha Patel', registeredAt: new Date().toISOString() },
+                    'CS2021005': { name: 'Vikram Yadav', registeredAt: new Date().toISOString() }
+                };
+                
+                students = { ...students, ...demoStudents };
+                localStorage.setItem('students', JSON.stringify(students));
+            }
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
