@@ -711,54 +711,54 @@
         // Timetable data based on the provided image
         const timetable = {
             'Monday': [
-                { id: 'mon1', subject: 'CS501', name: 'Operating Systems', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
-                { id: 'mon2', subject: 'CS502', name: 'Database Systems', startTime: '10:00', endTime: '11:00', room: 'Room A' },
-                { id: 'mon3', subject: 'CS503', name: 'Software Engineering', startTime: '11:30', endTime: '12:30', room: 'Room B' },
-                { id: 'mon4', subject: 'CS504', name: 'Computer Networks', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
-                { id: 'mon5', subject: 'CS505', name: 'Data Structures', startTime: '14:30', endTime: '15:30', room: 'Room C' },
-                { id: 'mon6', subject: 'CS506', name: 'Algorithms', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+                { id: 'mon1', subject: 'CS501', name: 'Theory of Computation', startTime: '09:10', endTime: '10:00', room: 'Lab 1' },
+                { id: 'mon2', subject: 'CS502', name: 'Database Management System', startTime: '10:00', endTime: '10:50', room: 'Room A' },
+                { id: 'mon3', subject: 'CS503', name: 'Data Analytics', startTime: '11:40', endTime: '12:30', room: 'Room B' },
+                { id: 'mon4', subject: 'CS504', name: 'Internet and Web Development', startTime: '12:30', endTime: '13:20', room: 'Lab 2' },
+                { id: 'mon5', subject: 'CS505', name: 'Linux', startTime: '14:10', endTime: '15:00', room: 'Room C' },
+                { id: 'mon6', subject: 'CS506', name: 'Python', startTime: '15:00', endTime: '16:00', room: 'Lab 3' }
             ],
             'Tuesday': [
-                { id: 'tue1', subject: 'CS502', name: 'Database Systems', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
-                { id: 'tue2', subject: 'CS504', name: 'Computer Networks', startTime: '10:00', endTime: '11:00', room: 'Room A' },
-                { id: 'tue3', subject: 'CS501', name: 'Operating Systems', startTime: '11:30', endTime: '12:30', room: 'Room B' },
-                { id: 'tue4', subject: 'CS506', name: 'Algorithms', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
-                { id: 'tue5', subject: 'CS503', name: 'Software Engineering', startTime: '14:30', endTime: '15:30', room: 'Room C' },
-                { id: 'tue6', subject: 'CS505', name: 'Data Structures', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+                { id: 'tue1', subject: 'CS502', name: 'Database Management System', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'tue2', subject: 'CS504', name: 'Internet and Web Development', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'tue3', subject: 'CS501', name: 'Theory of Computation', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'tue4', subject: 'CS506', name: 'Python', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'tue5', subject: 'CS503', name: 'Data Analytics', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'tue6', subject: 'CS505', name: 'Linux', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
             ],
             'Wednesday': [
                 { id: 'wed1', subject: 'CS505', name: 'Data Structures', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
-                { id: 'wed2', subject: 'CS501', name: 'Operating Systems', startTime: '10:00', endTime: '11:00', room: 'Room A' },
-                { id: 'wed3', subject: 'CS506', name: 'Algorithms', startTime: '11:30', endTime: '12:30', room: 'Room B' },
-                { id: 'wed4', subject: 'CS502', name: 'Database Systems', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
-                { id: 'wed5', subject: 'CS504', name: 'Computer Networks', startTime: '14:30', endTime: '15:30', room: 'Room C' },
-                { id: 'wed6', subject: 'CS503', name: 'Software Engineering', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+                { id: 'wed2', subject: 'CS501', name: 'Theory of Computation', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'wed3', subject: 'CS506', name: 'Python', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'wed4', subject: 'CS502', name: 'Database Management System', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'wed5', subject: 'CS504', name: 'Internet and Web Development', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'wed6', subject: 'CS503', name: 'Data Analytics', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
             ],
             'Thursday': [
-                { id: 'thu1', subject: 'CS503', name: 'Software Engineering', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
-                { id: 'thu2', subject: 'CS505', name: 'Data Structures', startTime: '10:00', endTime: '11:00', room: 'Room A' },
-                { id: 'thu3', subject: 'CS502', name: 'Database Systems', startTime: '11:30', endTime: '12:30', room: 'Room B' },
-                { id: 'thu4', subject: 'CS501', name: 'Operating Systems', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
-                { id: 'thu5', subject: 'CS506', name: 'Algorithms', startTime: '14:30', endTime: '15:30', room: 'Room C' },
-                { id: 'thu6', subject: 'CS504', name: 'Computer Networks', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+                { id: 'thu1', subject: 'CS503', name: 'Data Analytics', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'thu2', subject: 'CS505', name: 'Linux', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'thu3', subject: 'CS502', name: 'Database Management System', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'thu4', subject: 'CS501', name: 'Theory of Computation', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'thu5', subject: 'CS506', name: 'Python', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'thu6', subject: 'CS504', name: 'Internet and Web Development', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
             ],
             'Friday': [
-                { id: 'fri1', subject: 'CS506', name: 'Algorithms', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
-                { id: 'fri2', subject: 'CS503', name: 'Software Engineering', startTime: '10:00', endTime: '11:00', room: 'Room A' },
-                { id: 'fri3', subject: 'CS504', name: 'Computer Networks', startTime: '11:30', endTime: '12:30', room: 'Room B' },
-                { id: 'fri4', subject: 'CS505', name: 'Data Structures', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
-                { id: 'fri5', subject: 'CS501', name: 'Operating Systems', startTime: '14:30', endTime: '15:30', room: 'Room C' },
-                { id: 'fri6', subject: 'CS502', name: 'Database Systems', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
+                { id: 'fri1', subject: 'CS506', name: 'Python', startTime: '09:00', endTime: '10:00', room: 'Lab 1' },
+                { id: 'fri2', subject: 'CS503', name: 'Data Analytics', startTime: '10:00', endTime: '11:00', room: 'Room A' },
+                { id: 'fri3', subject: 'CS504', name: 'Internet and Web Development', startTime: '11:30', endTime: '12:30', room: 'Room B' },
+                { id: 'fri4', subject: 'CS505', name: 'Linux', startTime: '12:30', endTime: '13:30', room: 'Lab 2' },
+                { id: 'fri5', subject: 'CS501', name: 'Theory of Computation', startTime: '14:30', endTime: '15:30', room: 'Room C' },
+                { id: 'fri6', subject: 'CS502', name: 'Database Management System', startTime: '15:30', endTime: '16:30', room: 'Lab 3' }
             ]
         };
 
         const subjects = {
-            'CS501': 'Operating Systems',
-            'CS502': 'Database Systems', 
-            'CS503': 'Software Engineering',
-            'CS504': 'Computer Networks',
-            'CS505': 'Data Structures',
-            'CS506': 'Algorithms'
+            'CS501': 'Theory of Computation',
+            'CS502': 'Database Management System', 
+            'CS503': 'Data Analytics',
+            'CS504': 'Internet and Web Development',
+            'CS505': 'Linux',
+            'CS506': 'Python'
         };
 
         // Admin credentials
