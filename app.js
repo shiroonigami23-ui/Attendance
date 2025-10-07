@@ -7,36 +7,7 @@ let currentSession = null;
 let recognitionInterval = null;
 let theme = 'light';
 
-// Sample data for demo purposes
-const sampleStudents = [
-    {
-        id: "CS001",
-        name: "John Smith",
-        course: "Computer Science",
-        semester: "5th",
-        email: "john.smith@college.edu",
-        photo: null,
-        faceDescriptor: null
-    },
-    {
-        id: "CS002",
-        name: "Sarah Johnson",
-        course: "Computer Science",
-        semester: "5th",
-        email: "sarah.johnson@college.edu",
-        photo: null,
-        faceDescriptor: null
-    },
-    {
-        id: "CS003",
-        name: "Mike Chen",
-        course: "Computer Science",
-        semester: "5th",
-        email: "mike.chen@college.edu",
-        photo: null,
-        faceDescriptor: null
-    }
-];
+
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
@@ -47,7 +18,40 @@ document.addEventListener('DOMContentLoaded', function() {
     loadData();
     updateDashboard();
 });
+// Use maintained fork CDN for consistent weights
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
 
+async function loadFaceAPI() {
+  try {
+    showLoading(true, 'Loading Face Recognition Models...');
+    console.time('face-models');
+
+    if (typeof faceapi === 'undefined') {
+      throw new Error('face-api script not loaded');
+    }
+
+    // Load all required nets from the same base URL
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      // Optional extras, comment out if not used:
+      // faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+      // faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+    ]);
+
+    console.timeEnd('face-models');
+    faceApiLoaded = true;
+    updateSystemStatus('faceApiStatus', 'Ready', 'active');
+    showToast('Face models loaded', 'success');
+  } catch (err) {
+    console.error('Model load error:', err);
+    updateSystemStatus('faceApiStatus', 'Error', 'inactive');
+    showToast('Failed to load face models. Check network/CDN.', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
 // Initialize application
 function initializeApp() {
     console.log('Initializing app...');
