@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceAttend - Facial Recognition Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Face-API.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>🎯 FaceAttend</h2>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+                <button class="nav-btn" data-section="registration">Registration</button>
+                <button class="nav-btn" data-section="attendance">Attendance</button>
+                <button class="nav-btn" data-section="reports">Reports</button>
+                <button class="nav-btn" data-section="admin">Admin</button>
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <p class="text-secondary">Welcome to FaceAttend - Manage your attendance system</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3 id="totalStudents">0</h3>
+                            <p>Total Students</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-content">
+                            <h3 id="totalSessions">0</h3>
+                            <p>Active Sessions</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <h3 id="todayAttendance">0</h3>
+                            <p>Today's Attendance</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <h3 id="averageAttendance">0%</h3>
+                            <p>Average Attendance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Activity</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="recentActivity">
+                                <div class="activity-item">
+                                    <div class="activity-icon">🎯</div>
+                                    <div class="activity-content">
+                                        <p>System initialized successfully</p>
+                                        <span class="activity-time">Just now</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="quick-actions">
+                                <button class="btn btn-primary" onclick="showSection('registration')">
+                                    Add Student
+                                </button>
+                                <button class="btn btn-secondary" onclick="showSection('attendance')">
+                                    Start Attendance
+                                </button>
+                                <button class="btn btn-outline" onclick="showSection('reports')">
+                                    View Reports
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Registration Section -->
+        <section id="registration" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Student Registration</h1>
+                    <p class="text-secondary">Register new students for facial recognition attendance</p>
+                </div>
+
+                <div class="registration-container">
+                    <div class="registration-form">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Add New Student</h3>
+                            </div>
+                            <div class="card-content">
+                                <form id="studentRegistrationForm">
+                                    <div class="form-group">
+                                        <label for="studentId">Student ID</label>
+                                        <input type="text" id="studentId" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="studentName">Full Name</label>
+                                        <input type="text" id="studentName" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="studentCourse">Course</label>
+                                        <select id="studentCourse" required>
+                                            <option value="">Select Course</option>
+                                            <option value="Computer Science">Computer Science</option>
+                                            <option value="Information Technology">Information Technology</option>
+                                            <option value="Electronics">Electronics</option>
+                                            <option value="Mechanical">Mechanical</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="studentSemester">Semester</label>
+                                        <select id="studentSemester" required>
+                                            <option value="">Select Semester</option>
+                                            <option value="1st">1st Semester</option>
+                                            <option value="2nd">2nd Semester</option>
+                                            <option value="3rd">3rd Semester</option>
+                                            <option value="4th">4th Semester</option>
+                                            <option value="5th">5th Semester</option>
+                                            <option value="6th">6th Semester</option>
+                                            <option value="7th">7th Semester</option>
+                                            <option value="8th">8th Semester</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="studentEmail">Email</label>
+                                        <input type="email" id="studentEmail" required>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="photo-capture">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Capture Photo</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="camera-container">
+                                    <video id="registrationVideo" class="camera-feed" autoplay muted></video>
+                                    <canvas id="registrationCanvas" style="display: none;"></canvas>
+                                    <div class="camera-overlay">
+                                        <div class="face-frame"></div>
+                                    </div>
+                                </div>
+
+                                <div class="camera-controls">
+                                    <button id="startRegistrationCamera" class="btn btn-primary">
+                                        Start Camera
+                                    </button>
+                                    <button id="capturePhoto" class="btn btn-secondary" disabled>
+                                        Capture Photo
+                                    </button>
+                                    <button id="stopRegistrationCamera" class="btn btn-outline" disabled>
+                                        Stop Camera
+                                    </button>
+                                </div>
+
+                                <div id="capturedPhotoPreview" class="photo-preview" style="display: none;">
+                                    <img id="previewImage" alt="Captured photo">
+                                </div>
+
+                                <button id="registerStudent" class="btn btn-success" style="display: none;">
+                                    Register Student
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registered Students List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Registered Students</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="registeredStudentsList" class="students-list">
+                            <!-- Students will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Attendance Section -->
+        <section id="attendance" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Mark Attendance</h1>
+                    <p class="text-secondary">Use facial recognition to mark student attendance</p>
+                </div>
+
+                <div class="attendance-container">
+                    <div class="session-setup">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Session Setup</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="sessionCourse">Course</label>
+                                        <select id="sessionCourse" required>
+                                            <option value="">Select Course</option>
+                                            <option value="CS101">CS101 - Database Management</option>
+                                            <option value="CS102">CS102 - Web Development</option>
+                                            <option value="CS103">CS103 - Data Structures</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="sessionDate">Date</label>
+                                        <input type="date" id="sessionDate" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="sessionStartTime">Start Time</label>
+                                        <input type="time" id="sessionStartTime" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="sessionEndTime">End Time</label>
+                                        <input type="time" id="sessionEndTime" required>
+                                    </div>
+                                </div>
+
+                                <div class="session-controls">
+                                    <button id="startSession" class="btn btn-primary">Start Session</button>
+                                    <button id="endSession" class="btn btn-danger" disabled>End Session</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-capture">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Face Recognition</h3>
+                                <div class="session-status" id="sessionStatus">No Active Session</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="camera-container">
+                                    <video id="attendanceVideo" class="camera-feed" autoplay muted></video>
+                                    <canvas id="attendanceCanvas" style="display: none;"></canvas>
+                                    <div class="camera-overlay">
+                                        <div class="recognition-frame"></div>
+                                        <div class="recognition-status" id="recognitionStatus">Camera Inactive</div>
+                                    </div>
+                                </div>
+
+                                <div class="camera-controls">
+                                    <button id="startAttendanceCamera" class="btn btn-primary" disabled>
+                                        Start Recognition
+                                    </button>
+                                    <button id="stopAttendanceCamera" class="btn btn-outline" disabled>
+                                        Stop Recognition
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Attendance List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Live Attendance</h3>
+                        <div class="attendance-count">
+                            <span id="attendanceCount">0</span> students marked present
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="liveAttendanceList" class="attendance-list">
+                            <!-- Live attendance will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Attendance Reports</h1>
+                    <p class="text-secondary">View and analyze attendance data</p>
+                </div>
+
+                <div class="reports-filters">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Filter Options</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reportCourse">Course</label>
+                                    <select id="reportCourse">
+                                        <option value="">All Courses</option>
+                                        <option value="CS101">CS101 - Database Management</option>
+                                        <option value="CS102">CS102 - Web Development</option>
+                                        <option value="CS103">CS103 - Data Structures</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportDateFrom">From Date</label>
+                                    <input type="date" id="reportDateFrom">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportDateTo">To Date</label>
+                                    <input type="date" id="reportDateTo">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportStudent">Student</label>
+                                    <select id="reportStudent">
+                                        <option value="">All Students</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filter-controls">
+                                <button id="generateReport" class="btn btn-primary">Generate Report</button>
+                                <button id="exportCSV" class="btn btn-secondary">Export CSV</button>
+                                <button id="exportJSON" class="btn btn-outline">Export JSON</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Results -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Report Results</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="reportResults" class="report-table">
+                            <!-- Report results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="analytics-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Attendance Analytics</h3>
+                        </div>
+                        <div class="card-content">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Admin Panel</h1>
+                    <p class="text-secondary">System administration and management</p>
+                </div>
+
+                <div class="admin-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>System Settings</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <label for="recognitionThreshold">Recognition Threshold</label>
+                                <input type="range" id="recognitionThreshold" min="0.3" max="0.9" step="0.05" value="0.6">
+                                <span id="thresholdValue">0.6</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sessionTimeout">Session Timeout (minutes)</label>
+                                <input type="number" id="sessionTimeout" value="60" min="15" max="240">
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="livenessDetection" checked>
+                                    Enable Liveness Detection
+                                </label>
+                            </div>
+
+                            <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Data Management</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="data-actions">
+                                <button id="backupData" class="btn btn-secondary">Backup Data</button>
+                                <button id="restoreData" class="btn btn-outline">Restore Data</button>
+                                <button id="clearAllData" class="btn btn-danger">Clear All Data</button>
+                            </div>
+
+                            <div class="file-input-group">
+                                <label for="restoreFile">Restore from file:</label>
+                                <input type="file" id="restoreFile" accept=".json">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>System Status</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="status-item">
+                                <span class="status-label">Face-API Status:</span>
+                                <span id="faceApiStatus" class="status-value loading">Loading...</span>
+                            </div>
+
+                            <div class="status-item">
+                                <span class="status-label">Camera Status:</span>
+                                <span id="cameraStatus" class="status-value inactive">Inactive</span>
+                            </div>
+
+                            <div class="status-item">
+                                <span class="status-label">Storage Usage:</span>
+                                <span id="storageUsage" class="status-value">0 KB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loadingText">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
