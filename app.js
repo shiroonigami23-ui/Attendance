@@ -11,37 +11,72 @@ const app = {
             recognitionThreshold: 0.6,
             sessionTimeout: 60,
             livenessDetection: true,
+            adminEmail: "admin@faceattend.com" // Default admin email
         },
         currentSession: null,
         recognitionInterval: null,
+        isLoggedIn: false,
     },
 
     /**
-     * Initializes the entire application.
+     * Initializes the login flow.
      */
-    async init() {
-        // Load data and theme first
-        const { students, attendanceRecords, settings } = db.load();
-        this.state.students = students;
-        this.state.attendanceRecords = attendanceRecords;
-        this.state.settings = { ...this.state.settings, ...settings };
+    init() {
+        // Load theme preference early
         const savedTheme = localStorage.getItem('faceAttend_theme');
         if (savedTheme) {
             document.documentElement.setAttribute('data-theme', savedTheme);
             document.getElementById('themeToggle').textContent = savedTheme === 'light' ? '🌙' : '☀️';
         }
-
-        this.setupEventListeners();
-        this.refreshUI();
-        await face.loadModels();
-        face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
-        console.log("FaceAttend Initialized.");
+        
+        // Setup login/splash event listeners
+        document.getElementById('enter-app-btn').addEventListener('click', () => {
+            document.getElementById('splash-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        });
+        document.getElementById('login-form').addEventListener('submit', this.handleLogin.bind(this));
+        
+        console.log("FaceAttend ready. Waiting for admin login.");
+    },
+    
+    /**
+     * Handles the admin login attempt.
+     * @param {Event} event - The form submission event.
+     */
+    handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('admin-email').value;
+        if (email.toLowerCase() === this.state.settings.adminEmail) {
+            this.state.isLoggedIn = true;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            this.startApp();
+        } else {
+            ui.showToast("Invalid admin email.", "error");
+        }
     },
 
     /**
-     * Binds all necessary event listeners.
+     * Starts the main application after a successful login.
      */
-    setupEventListeners() {
+    async startApp() {
+        // Load data and setup main app event listeners
+        const { students, attendanceRecords, settings } = db.load();
+        this.state.students = students;
+        this.state.attendanceRecords = attendanceRecords;
+        this.state.settings = { ...this.state.settings, ...settings };
+
+        this.setupMainAppEventListeners();
+        this.refreshUI();
+        await face.loadModels();
+        face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
+        console.log("FaceAttend Initialized and running.");
+    },
+
+    /**
+     * Binds all necessary event listeners for the main application.
+     */
+    setupMainAppEventListeners() {
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => 
             btn.addEventListener('click', () => ui.showSection(btn.dataset.section))
@@ -328,7 +363,7 @@ const app = {
 
     clearAllData() {
         if (db.clearAll()) {
-            this.state = { students: [], attendanceRecords: [], settings: {}, currentSession: null, recognitionInterval: null };
+            this.state = { students: [], attendanceRecords: [], settings: {}, currentSession: null, recognitionInterval: null, isLoggedIn: true };
             face.createMatcher([]);
             this.refreshUI();
             ui.showToast('All application data has been cleared.', 'success');
