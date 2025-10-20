@@ -1,5 +1,5 @@
 // app.js
-import { dbHandler } from './database.js';
+import { dbHandler, adminListHandler } from './database.js';
 
 const app = {
     state: {
@@ -13,58 +13,76 @@ const app = {
         },
         currentSession: null,
         recognitionInterval: null,
-        adminUser: null, // To store logged-in user info
+        adminUser: null,
     },
 
-    /**
-     * Initializes the Firebase auth listener. This is the new entry point.
-     */
     init() {
         document.addEventListener('firebase-ready', () => {
             const auth = window.auth;
             window.onAuthStateChanged(auth, user => {
-                if (user) {
-                    // User is signed in.
+                if (user && user.isVerifiedAdmin) { // Custom flag to ensure they passed our check
                     this.state.adminUser = user;
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('app-container').classList.remove('hidden');
                     this.startApp();
                 } else {
-                    // User is signed out.
                     this.state.adminUser = null;
                     document.getElementById('login-screen').classList.remove('hidden');
                     document.getElementById('app-container').classList.add('hidden');
+                     if (user) window.signOut(auth); // Sign out if they are not a verified admin
                 }
             });
 
-            document.getElementById('login-btn').addEventListener('click', this.handleLogin);
+            document.getElementById('login-btn').addEventListener('click', this.handleLogin.bind(this));
         });
     },
     
-    /**
-     * Handles the Google Sign-In process using the Firebase SDK.
-     */
-    handleLogin() {
+    async handleLogin() {
         const provider = new window.GoogleAuthProvider();
         const auth = window.auth;
         const authStatus = document.getElementById('auth-status');
         authStatus.textContent = 'Opening Google Sign-in...';
-        window.signInWithPopup(auth, provider)
-            .then((result) => {
-                authStatus.textContent = `Welcome, ${result.user.displayName}!`;
-                // onAuthStateChanged will handle showing the app
-            }).catch((error) => {
-                console.error("Authentication Error:", error);
-                authStatus.textContent = `Login Failed: ${error.message}`;
-                ui.showToast(`Login Failed: ${error.code}`, 'error');
-            });
-    },
 
-    /**
-     * Starts the main application after a successful login.
-     * Loads data from Firestore and initializes the UI and face models.
-     */
+        try {
+            const result = await window.signInWithPopup(auth, provider);
+            const user = result.user;
+            authStatus.textContent = 'Verifying admin status...';
+
+            const admins = await adminListHandler.getAdmins();
+            const isExistingAdmin = admins.some(admin => admin.uid === user.uid);
+
+            if (isExistingAdmin) {
+                authStatus.textContent = `Welcome back, ${user.displayName}!`;
+                user.isVerifiedAdmin = true; // Set flag to allow entry
+                this.state.adminUser = user;
+                this.startApp();
+
+            } else if (admins.length < 10) {
+                authStatus.textContent = 'Registering new admin account...';
+                await adminListHandler.addAdmin(user);
+                authStatus.textContent = `Welcome, ${user.displayName}! Registration successful.`;
+                user.isVerifiedAdmin = true; // Set flag to allow entry
+                this.state.adminUser = user;
+                this.startApp();
+
+            } else {
+                authStatus.textContent = 'Login failed: Admin registration is closed.';
+                ui.showToast('The maximum number of admins (10) has been reached.', 'error');
+                await window.signOut(auth);
+            }
+
+        } catch (error) {
+            console.error("Authentication Error:", error);
+            if (error.code !== 'auth/popup-closed-by-user') {
+               authStatus.textContent = `Login Failed: ${error.message}`;
+            } else {
+               authStatus.textContent = '';
+            }
+        }
+    },
+    
     async startApp() {
+        if (!this.state.adminUser) return;
         ui.showLoading(true, "Loading admin data...");
         const { students, attendanceRecords, settings } = await dbHandler.load(this.state.adminUser.uid);
         this.state.students = students;
@@ -79,38 +97,26 @@ const app = {
         console.log("FaceAttend Initialized and running for admin:", this.state.adminUser.email);
     },
 
-    /**
-     * Binds all necessary event listeners for the main application UI.
-     */
     setupMainAppEventListeners() {
-        // Logout Button
-        document.getElementById('logout-btn').addEventListener('click', () => window.signOut(window.auth));
+        if(this.listenersAttached) return; // Prevent re-attaching listeners
+        this.listenersAttached = true;
 
-        // Navigation
+        document.getElementById('logout-btn').addEventListener('click', () => window.signOut(window.auth));
         document.querySelectorAll('.nav-btn').forEach(btn => 
             btn.addEventListener('click', () => ui.showSection(btn.dataset.section))
         );
         document.getElementById('themeToggle').addEventListener('click', ui.toggleTheme);
-        
-        // Registration
         document.getElementById('startRegistrationCamera').addEventListener('click', this.startRegistrationCamera.bind(this));
         document.getElementById('capturePhoto').addEventListener('click', this.capturePhoto.bind(this));
         document.getElementById('stopRegistrationCamera').addEventListener('click', this.stopRegistrationCamera.bind(this));
         document.getElementById('registerStudent').addEventListener('click', this.registerStudent.bind(this));
-
-        // Attendance
         document.getElementById('startSession').addEventListener('click', this.startSession.bind(this));
         document.getElementById('endSession').addEventListener('click', this.endSession.bind(this));
         document.getElementById('startAttendanceCamera').addEventListener('click', this.startAttendance.bind(this));
         document.getElementById('stopAttendanceCamera').addEventListener('click', this.stopAttendance.bind(this));
-
-        // Reports
         document.getElementById('generateReport').addEventListener('click', this.generateReport.bind(this));
         document.getElementById('exportCSV').addEventListener('click', this.exportCSV.bind(this));
         document.getElementById('exportJSON').addEventListener('click', this.exportJSON.bind(this));
-
-
-        // Admin
         document.getElementById('recognitionThreshold').addEventListener('input', e => {
             document.getElementById('thresholdValue').textContent = e.target.value;
         });
@@ -121,9 +127,6 @@ const app = {
         document.getElementById('clearAllData').addEventListener('click', this.clearAllData.bind(this));
     },
 
-    /**
-     * Refreshes all UI components with current state data.
-     */
     refreshUI() {
         if (!this.state.adminUser) return;
         ui.refresh(this.state);
@@ -135,7 +138,6 @@ const app = {
         document.getElementById('livenessDetection').checked = this.state.settings.livenessDetection;
     },
 
-    // --- REGISTRATION LOGIC ---
     async startRegistrationCamera() {
         const success = await camera.start('registrationVideo');
         if (success) {
@@ -206,7 +208,7 @@ const app = {
                 ui.showToast('Could not create face signature. Please try another photo.', 'error');
                 return;
             }
-            student.faceDescriptor = descriptor;
+            student.faceDescriptor = Array.from(descriptor);
             this.state.students.push(student);
             
             await dbHandler.save(this.state.adminUser.uid, this.state);
@@ -230,7 +232,6 @@ const app = {
         }
     },
     
-    // --- ATTENDANCE LOGIC ---
     startSession() {
         const course = document.getElementById('sessionCourse').value;
         if (!course) { ui.showToast('Please select a course.', 'warning'); return; }
@@ -324,11 +325,10 @@ const app = {
         }
     },
 
-    // --- REPORTS & ADMIN LOGIC ---
     generateReport() {
         const course = document.getElementById('reportCourse').value;
-        const from = document.getElementById('reportDateFrom').value;
-        const to = document.getElementById('reportDateTo').value;
+        const from = document.getElementById('reportDateFrom').value || '1970-01-01';
+        const to = document.getElementById('reportDateTo').value || '2999-12-31';
         const studentId = document.getElementById('reportStudent').value;
         
         let results = [];
@@ -356,14 +356,13 @@ const app = {
     },
 
     exportJSON() {
-        this.generateReport(); // Ensure results are filtered
+        this.generateReport();
         const table = document.querySelector('#reportResults table');
         if (!table) { ui.showToast('Generate a report first to export.', 'warning'); return; }
         
-        // Re-filter the data just like in generateReport to get the raw objects
         const course = document.getElementById('reportCourse').value;
-        const from = document.getElementById('reportDateFrom').value;
-        const to = document.getElementById('reportDateTo').value;
+        const from = document.getElementById('reportDateFrom').value || '1970-01-01';
+        const to = document.getElementById('reportDateTo').value || '2999-12-31';
         const studentId = document.getElementById('reportStudent').value;
         let results = [];
         this.state.attendanceRecords.forEach(session => {
@@ -395,7 +394,7 @@ const app = {
 
     async restoreData(event) {
         if (!confirm("This will overwrite your current cloud data with the contents of the backup file. This cannot be undone. Are you sure?")) {
-            event.target.value = ''; // Reset file input
+            event.target.value = '';
             return;
         }
         
@@ -412,7 +411,7 @@ const app = {
             
             if (!data.students || !data.attendanceRecords || !data.settings) {
                 throw new Error("Invalid backup file format.");
-            }
+  }
 
             this.state.students = data.students;
             this.state.attendanceRecords = data.attendanceRecords;
@@ -424,13 +423,12 @@ const app = {
         } catch (error) {
             ui.showToast(error.message || 'Failed to restore data.', 'error');
         } finally {
-      event.target.value = ''; // Reset file input
+            event.target.value = '';
         }
     },
 
     async clearAllData() {
         if (confirm('Are you sure you want to clear ALL student and attendance data from the cloud? This is permanent.')) {
-            // This approach saves an empty state over the old one.
             this.state.students = [];
             this.state.attendanceRecords = [];
             await dbHandler.save(this.state.adminUser.uid, this.state);
@@ -441,5 +439,4 @@ const app = {
     }
 };
 
-// Initial entry point
 app.init();
