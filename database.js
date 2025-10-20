@@ -1,90 +1,112 @@
-// database.js
-
 /**
- * Initializes the database connection.
- * For this application, we will use localStorage as a simple database.
- * More robust solutions like IndexedDB could be used for larger applications.
+ * database.js
+ * Handles all interactions with localStorage for data persistence.
  */
-function initializeDB() {
-    console.log('Database initialized (localStorage)');
-}
 
-/**
- * Saves all application data to localStorage.
- * @param {Array} students - The array of registered students.
- * @param {Array} records - The array of attendance records.
- * @param {Object} settings - The application settings.
- */
-function saveData(students, records, settings) {
-    try {
-        localStorage.setItem('faceAttendStudents', JSON.stringify(students));
-        localStorage.setItem('faceAttendRecords', JSON.stringify(records));
-        localStorage.setItem('faceAttendSettings', JSON.stringify(settings));
-        return true;
-    } catch (error) {
-        console.error('Error saving data:', error);
-        return false;
-    }
-}
-
-/**
- * Loads all application data from localStorage.
- * @returns {Object} An object containing students, records, and settings.
- */
-function loadData() {
-    try {
-        const students = JSON.parse(localStorage.getItem('faceAttendStudents')) || [];
-        const records = JSON.parse(localStorage.getItem('faceAttendRecords')) || [];
-        const settings = JSON.parse(localStorage.getItem('faceAttendSettings')) || {};
-        return { students, records, settings };
-    } catch (error) {
-        console.error('Error loading data:', error);
-        return { students: [], records: [], settings: {} };
-    }
-}
-
-/**
- * Clears all data from localStorage.
- */
-function clearAllData() {
-    if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+const db = {
+    /**
+     * Saves the entire application state to localStorage.
+     * @param {Object} state - The application state object.
+     */
+    save(state) {
         try {
-            localStorage.removeItem('faceAttendStudents');
-            localStorage.removeItem('faceAttendRecords');
-            localStorage.removeItem('faceAttendSettings');
-            return true;
+            localStorage.setItem('faceAttend_students', JSON.stringify(state.students));
+            localStorage.setItem('faceAttend_records', JSON.stringify(state.attendanceRecords));
+            localStorage.setItem('faceAttend_settings', JSON.stringify(state.settings));
         } catch (error) {
-            console.error('Error clearing data:', error);
-            return false;
+            console.error("Error saving data to localStorage:", error);
+            ui.showToast("Could not save data.", "error");
         }
+    },
+
+    /**
+     * Loads the application state from localStorage.
+     * @returns {Object} The loaded state (students, records, settings).
+     */
+    load() {
+        try {
+            const students = JSON.parse(localStorage.getItem('faceAttend_students')) || [];
+            const attendanceRecords = JSON.parse(localStorage.getItem('faceAttend_records')) || [];
+            const settings = JSON.parse(localStorage.getItem('faceAttend_settings')) || {};
+            return { students, attendanceRecords, settings };
+        } catch (error) {
+            console.error("Error loading data from localStorage:", error);
+            return { students: [], attendanceRecords: [], settings: {} };
+        }
+    },
+
+    /**
+     * Clears all application data from localStorage.
+     */
+    clearAll() {
+        if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
+            localStorage.removeItem('faceAttend_students');
+            localStorage.removeItem('faceAttend_records');
+            localStorage.removeItem('faceAttend_settings');
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Creates a JSON backup of the current data and triggers a download.
+     * @param {Object} state - The application state object.
+     */
+    backup(state) {
+        const backupData = {
+            students: state.students,
+            attendanceRecords: state.attendanceRecords,
+            settings: state.settings,
+            backupDate: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        this.download(blob, `faceattend-backup-${Date.now()}.json`);
+        ui.showToast("Backup created successfully!", "success");
+    },
+
+    /**
+     * Handles the file selection for restoring data.
+     * @param {Event} event - The file input change event.
+     * @returns {Promise<Object>} A promise that resolves with the parsed data from the file.
+     */
+    handleRestoreFile(event) {
+        return new Promise((resolve, reject) => {
+            const file = event.target.files[0];
+            if (!file) {
+                reject('No file selected.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.students && data.attendanceRecords && data.settings) {
+                        resolve(data);
+                    } else {
+                        reject('Invalid backup file format.');
+                    }
+                } catch (error) {
+                    reject('Error parsing backup file.');
+                }
+            };
+            reader.onerror = () => reject('Error reading file.');
+            reader.readAsText(file);
+        });
+    },
+    
+    /**
+     * Utility to trigger a file download.
+     * @param {Blob} blob - The data blob to download.
+     * @param {string} filename - The name of the file.
+     */
+    download(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
-    return false;
-}
-
-/**
- * Exports data to a file.
- * @param {Object} data - The data to export.
- * @param {string} fileName - The name of the file.
- * @param {string} contentType - The MIME type of the file.
- */
-function exportToFile(data, fileName, contentType) {
-    const content = (contentType === 'application/json') ? JSON.stringify(data, null, 2) : data;
-    const blob = new Blob([content], { type: contentType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-// Make functions available to other scripts
-window.db = {
-    initializeDB,
-    saveData,
-    loadData,
-    clearAllData,
-    exportToFile,
 };
