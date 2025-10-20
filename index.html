@@ -9,31 +9,41 @@
     <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { firebaseConfig } from './firebase-config.js';
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        window.auth = getAuth(app);
+        window.db = getFirestore(app);
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.signInWithPopup = signInWithPopup;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signOut = signOut;
+
+        // Manually trigger app initialization after Firebase is ready
+        document.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
 </head>
 <body>
 
-    <!-- Splash Screen -->
-    <div id="splash-screen" class="splash-screen">
-        <div class="splash-content">
+    <!-- Login Screen (Replaces Splash) -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
             <div class="splash-logo">📷</div>
             <h1>FaceAttend</h1>
-            <p>Facial Recognition Attendance System</p>
-            <button id="enter-app-btn" class="btn btn-primary">Enter as Admin</button>
-        </div>
-    </div>
-
-    <!-- Login Screen -->
-    <div id="login-screen" class="login-screen hidden">
-        <div class="login-card">
-            <h2>Admin Login</h2>
-            <p class="text-secondary">Please enter your email to continue</p>
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="admin-email">Email Address</label>
-                    <input type="email" id="admin-email" placeholder="admin@example.com" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
-            </form>
+            <p class="text-secondary">Admin Login Required</p>
+            <button id="login-btn" class="btn btn-primary btn-google">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                <span>Sign in with Google</span>
+            </button>
+            <p id="auth-status" class="auth-status"></p>
         </div>
     </div>
 
@@ -51,6 +61,7 @@
                     <button class="nav-btn" data-section="attendance">Attendance</button>
                     <button class="nav-btn" data-section="reports">Reports</button>
                     <button class="nav-btn" data-section="admin">Admin</button>
+                    <button id="logout-btn" class="btn btn-danger">Logout</button>
                     <button class="theme-toggle" id="themeToggle">🌙</button>
                 </div>
             </div>
@@ -59,11 +70,11 @@
         <!-- Main Content -->
         <main class="main-container">
             <!-- Sections remain the same as before -->
-            <!-- Dashboard Section -->
+             <!-- Dashboard Section -->
             <section id="dashboard" class="section active">
                 <div class="container">
                     <div class="section-header">
-                        <h1>Dashboard</h1>
+                        <h1 id="welcome-message">Dashboard</h1>
                         <p class="text-secondary">Welcome to FaceAttend - Manage your attendance system</p>
                     </div>
 
@@ -322,7 +333,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card">
+         <div class="card">
                         <div class="card-header"><h3>Report Results</h3></div>
                         <div class="card-content">
                             <div id="reportResults" class="report-table">
@@ -351,7 +362,11 @@
                             <div class="card-header"><h3>System Settings</h3></div>
                             <div class="card-content">
                                 <div class="form-group">
-                  <label for="recognitionThreshold">Recognition Threshold</label>
+                                    <label for="gemini-api-key">Gemini API Key</label>
+                                    <input type="password" id="gemini-api-key" placeholder="Enter your Gemini API Key">
+                                </div>
+                                <div class="form-group">
+                                    <label for="recognitionThreshold">Recognition Threshold</label>
                                     <input type="range" id="recognitionThreshold" min="0.3" max="0.9" step="0.05" value="0.6">
                                     <span id="thresholdValue">0.6</span>
                                 </div>
@@ -412,10 +427,12 @@
     <div id="toast" class="toast"></div>
 
     <!-- Application Scripts (in order of dependency) -->
-    <script src="database.js"></script>
+    <script src="firebase-config.js" type="module"></script>
+    <script src="database.js" type="module"></script>
     <script src="ui.js"></script>
     <script src="camera.js"></script>
     <script src="face.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js" type="module"></script>
 </body>
 </html>
+
