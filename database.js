@@ -1,57 +1,91 @@
-/**
- * database.js
- * Handles all interactions with localStorage for data persistence.
- */
+// database.js
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const db = {
+// This module now uses Firestore instead of localStorage
+export const dbHandler = {
     /**
-     * Saves the entire application state to localStorage.
-     * @param {Object} state - The application state object.
+     * Saves or updates the entire application state in Firestore.
+     * @param {string} adminId - The UID of the logged-in admin.
+     * @param {Object} state - The application state to save.
      */
-    save(state) {
+    async save(adminId, state) {
+        if (!adminId) return;
+        const db = getFirestore();
+        const batch = writeBatch(db);
+
+        // Save settings
+        const settingsRef = doc(db, "admins", adminId, "config", "settings");
+        batch.set(settingsRef, state.settings);
+
+        // Save students
+        state.students.forEach(student => {
+            const studentRef = doc(db, "admins", adminId, "students", student.id);
+            batch.set(studentRef, student);
+        });
+        
+        // Save attendance records
+        state.attendanceRecords.forEach(record => {
+             const recordRef = doc(db, "admins", adminId, "attendance", record.id);
+             batch.set(recordRef, record);
+        });
+
         try {
-            localStorage.setItem('faceAttend_students', JSON.stringify(state.students));
-            localStorage.setItem('faceAttend_records', JSON.stringify(state.attendanceRecords));
-            localStorage.setItem('faceAttend_settings', JSON.stringify(state.settings));
+            await batch.commit();
         } catch (error) {
-            console.error("Error saving data to localStorage:", error);
+            console.error("Error saving data to Firestore:", error);
             ui.showToast("Could not save data.", "error");
         }
     },
 
     /**
-     * Loads the application state from localStorage.
-     * @returns {Object} The loaded state (students, records, settings).
+     * Loads the entire application state from Firestore.
+     * @param {string} adminId - The UID of the logged-in admin.
+     * @returns {Promise<Object>} The loaded state.
      */
-    load() {
+    async load(adminId) {
+        if (!adminId) return { students: [], attendanceRecords: [], settings: {} };
+        const db = getFirestore();
         try {
-            const students = JSON.parse(localStorage.getItem('faceAttend_students')) || [];
-            const attendanceRecords = JSON.parse(localStorage.getItem('faceAttend_records')) || [];
-            const settings = JSON.parse(localStorage.getItem('faceAttend_settings')) || {};
+            // Load settings
+            const settingsRef = doc(db, "admins", adminId, "config", "settings");
+            const settingsSnap = await getDoc(settingsRef);
+            const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+
+            // Load students
+            const studentsCol = collection(db, "admins", adminId, "students");
+            const studentsSnap = await getDocs(studentsCol);
+            const students = studentsSnap.docs.map(doc => doc.data());
+
+            // Load attendance records
+            const recordsCol = collection(db, "admins", adminId, "attendance");
+            const recordsSnap = await getDocs(recordsCol);
+            const attendanceRecords = recordsSnap.docs.map(doc => doc.data());
+
             return { students, attendanceRecords, settings };
         } catch (error) {
-            console.error("Error loading data from localStorage:", error);
+            console.error("Error loading data from Firestore:", error);
+            ui.showToast("Failed to load data.", "error");
             return { students: [], attendanceRecords: [], settings: {} };
         }
     },
 
     /**
-     * Clears all application data from localStorage.
+     * Deletes a single student from Firestore.
+     * @param {string} adminId - The UID of the logged-in admin.
+     * @param {string} studentId - The ID of the student to delete.
      */
-    clearAll() {
-        if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
-            localStorage.removeItem('faceAttend_students');
-            localStorage.removeItem('faceAttend_records');
-            localStorage.removeItem('faceAttend_settings');
-            return true;
+    async deleteStudent(adminId, studentId) {
+        if (!adminId || !studentId) return;
+        const db = getFirestore();
+        const studentRef = doc(db, "admins", adminId, "students", studentId);
+        try {
+            await deleteDoc(studentRef);
+        } catch(error) {
+            console.error("Error deleting student:", error);
         }
-        return false;
     },
 
-    /**
-     * Creates a JSON backup of the current data and triggers a download.
-     * @param {Object} state - The application state object.
-     */
+    // Backup and restore can remain client-side for simplicity, but operate on data from Firestore
     backup(state) {
         const backupData = {
             students: state.students,
@@ -60,53 +94,14 @@ const db = {
             backupDate: new Date().toISOString()
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-        this.download(blob, `faceattend-backup-${Date.now()}.json`);
-        ui.showToast("Backup created successfully!", "success");
-    },
-
-    /**
-     * Handles the file selection for restoring data.
-     * @param {Event} event - The file input change event.
-     * @returns {Promise<Object>} A promise that resolves with the parsed data from the file.
-     */
-    handleRestoreFile(event) {
-        return new Promise((resolve, reject) => {
-            const file = event.target.files[0];
-            if (!file) {
-                reject('No file selected.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.students && data.attendanceRecords && data.settings) {
-                        resolve(data);
-                    } else {
-                        reject('Invalid backup file format.');
-                    }
-                } catch (error) {
-                    reject('Error parsing backup file.');
-                }
-            };
-            reader.onerror = () => reject('Error reading file.');
-            reader.readAsText(file);
-        });
-    },
-    
-    /**
-     * Utility to trigger a file download.
-     * @param {Blob} blob - The data blob to download.
-     * @param {string} filename - The name of the file.
-     */
-    download(blob, filename) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        a.download = `faceattend-backup-${Date.now()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
+        ui.showToast("Backup created successfully!", "success");
+    },
 };
