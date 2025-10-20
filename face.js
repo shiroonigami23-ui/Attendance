@@ -1,94 +1,83 @@
-// face.js
-
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
-let faceApiLoaded = false;
-let faceMatcher = null;
-
 /**
- * Loads the face-api.js models.
- * @returns {Promise<boolean>} True if models loaded successfully, false otherwise.
+ * face.js
+ * Handles all face-api.js interactions, including model loading and recognition.
  */
-async function loadModels() {
-    if (faceApiLoaded) return true;
-    try {
-        ui.showLoading(true, 'Loading Face Recognition Models...');
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
-        faceApiLoaded = true;
-        ui.updateSystemStatus('faceApiStatus', 'Ready', 'active');
-        ui.showToast('Face models loaded successfully!', 'success');
-        return true;
-    } catch (error) {
-        console.error('Error loading face-api models:', error);
-        ui.updateSystemStatus('faceApiStatus', 'Error', 'inactive');
-        ui.showToast('Failed to load face models. Check network.', 'error');
-        return false;
-    } finally {
-        ui.showLoading(false);
-    }
-}
 
-/**
- * Detects a single face and computes its descriptor from an image.
- * @param {HTMLImageElement|HTMLVideoElement} image - The image or video element.
- * @returns {Promise<Float32Array|null>} The face descriptor or null if no face is detected.
- */
-async function getFaceDescriptor(image) {
-    if (!faceApiLoaded) {
-        ui.showToast('Face models not loaded yet.', 'error');
-        return null;
-    }
-    try {
-        const detection = await faceapi.detectSingleFace(image, new faceapi.TinyFaceDetectorOptions())
+const face = {
+    isLoaded: false,
+    faceMatcher: null,
+    MODEL_URL: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/',
+
+    /**
+     * Loads all necessary face recognition models.
+     */
+    async loadModels() {
+        if (this.isLoaded) return;
+        ui.showLoading(true, 'Loading Face Models...');
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(this.MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL),
+                faceapi.nets.faceExpressionNet.loadFromUri(this.MODEL_URL) // For potential future use
+            ]);
+            this.isLoaded = true;
+            ui.updateSystemStatus('faceApiStatus', 'Ready', 'active');
+            ui.showToast('Face models loaded.', 'success');
+        } catch (error) {
+            console.error("Error loading face models:", error);
+            ui.updateSystemStatus('faceApiStatus', 'Error', 'inactive');
+            ui.showToast('Failed to load face models.', 'error');
+        } finally {
+            ui.showLoading(false);
+        }
+    },
+
+    /**
+     * Creates a face descriptor from an image element.
+     * @param {HTMLImageElement|HTMLVideoElement} imageEl - The image or video to process.
+     * @returns {Promise<Float32Array|null>} The descriptor or null if not found.
+     */
+    async getDescriptor(imageEl) {
+        if (!this.isLoaded) return null;
+        const detection = await faceapi
+            .detectSingleFace(imageEl, new faceapi.TinyFaceDetectorOptions())
             .withFaceLandmarks()
             .withFaceDescriptor();
         return detection ? detection.descriptor : null;
-    } catch (error) {
-        console.error('Error getting face descriptor:', error);
-        return null;
+    },
+
+    /**
+     * Creates a FaceMatcher instance from the list of registered students.
+     * @param {Array} students - The array of student objects.
+     * @param {number} threshold - The recognition distance threshold.
+     */
+    createMatcher(students, threshold = 0.6) {
+        if (!students || students.length === 0) {
+            this.faceMatcher = null;
+            return;
+        }
+        const labeledDescriptors = students
+            .filter(s => s.faceDescriptor && s.faceDescriptor.length > 0)
+            .map(s => new faceapi.LabeledFaceDescriptors(
+                s.id,
+                [Float32Array.from(Object.values(s.faceDescriptor))]
+            ));
+        
+        if (labeledDescriptors.length > 0) {
+            this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, threshold);
+        } else {
+            this.faceMatcher = null;
+        }
+    },
+
+    /**
+     * Finds the best match for a given descriptor.
+     * @param {Float32Array} descriptor - The descriptor to match.
+     * @returns {faceapi.FaceMatch|null} The best match or null.
+     */
+    findBestMatch(descriptor) {
+        if (!this.faceMatcher || !descriptor) return null;
+        return this.faceMatcher.findBestMatch(descriptor);
     }
-}
-
-/**
- * Creates a FaceMatcher for recognizing faces.
- * @param {Array} students - An array of student objects with face descriptors.
- */
-function createFaceMatcher(students) {
-    if (students.length === 0) {
-        faceMatcher = null;
-        return;
-    }
-    const labeledFaceDescriptors = students
-        .filter(student => student.faceDescriptor)
-        .map(student => new faceapi.LabeledFaceDescriptors(
-            student.id,
-            [Float32Array.from(student.faceDescriptor)]
-        ));
-
-    if (labeledFaceDescriptors.length > 0) {
-        faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-    } else {
-        faceMatcher = null;
-    }
-}
-
-/**
- * Finds the best match for a face descriptor.
- * @param {Float32Array} descriptor - The face descriptor to match.
- * @returns {Object|null} The best match result or null.
- */
-function findBestMatch(descriptor) {
-    if (!faceMatcher) return null;
-    return faceMatcher.findBestMatch(descriptor);
-}
-
-// Make face recognition functions available globally
-window.face = {
-    loadModels,
-    getFaceDescriptor,
-    createFaceMatcher,
-    findBestMatch,
 };
