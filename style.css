@@ -4,7 +4,7 @@
     --primary-color: #3b82f6;
     --primary-hover: #2563eb;
     --secondary-color: #6b7280;
-    --success-color: #10b981;
+    --success-color: #10b81;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
 
@@ -58,8 +58,8 @@ body {
     display: none !important;
 }
 
-/* Splash and Login Screens */
-.splash-screen, .login-screen {
+/* Login Screen */
+.login-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -74,24 +74,6 @@ body {
     transition: opacity 0.5s ease;
 }
 
-.splash-content {
-    animation: fadeIn 1s ease-in-out;
-}
-.splash-logo {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-.splash-screen h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-.splash-screen p {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    margin-bottom: 2rem;
-}
-
 .login-card {
     background: var(--card-color);
     padding: 2.5rem;
@@ -101,15 +83,42 @@ body {
     max-width: 400px;
     animation: fadeIn 0.5s ease;
 }
-.login-card h2 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+.login-card h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+.login-card .splash-logo {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    background: #4285F4 !important;
+    color: white !important;
+    border: none;
+    margin-top: 1.5rem;
+}
+.btn-google:hover {
+    background: #357ae8 !important;
+}
+
+.auth-status {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    min-height: 1.2em;
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
 
 /* Main App Container */
 #app-container {
@@ -615,8 +624,27 @@ input:focus, select:focus, textarea:focus {
 /* Responsive */
 @media (max-width: 768px) {
     .nav-container { padding: 0 1rem; }
+    .nav-links {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--card-color);
+        height: 60px;
+        justify-content: space-around;
+        border-top: 1px solid var(--border-color);
+        padding: 0;
+    }
+    .nav-btn {
+        flex: 1;
+        height: 100%;
+        border-radius: 0;
+    }
+    #logout-btn { display: none; } /* Hide logout on mobile nav, could be moved to admin panel */
+
     .section { padding: 1rem; }
+    .main-container { padding-bottom: 60px; } /* Add padding for bottom nav */
     .dashboard-content, .registration-container, .attendance-container, .admin-grid {
         grid-template-columns: 1fr;
     }
-}
+    }
