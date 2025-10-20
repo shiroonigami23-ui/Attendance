@@ -1,7 +1,5 @@
-/**
- * app.js
- * The main application controller. Manages state and orchestrates other modules.
- */
+// app.js
+import { dbHandler } from './database.js';
 
 const app = {
     state: {
@@ -11,72 +9,83 @@ const app = {
             recognitionThreshold: 0.6,
             sessionTimeout: 60,
             livenessDetection: true,
-            adminEmail: "admin@faceattend.com" // Default admin email
+            geminiApiKey: ''
         },
         currentSession: null,
         recognitionInterval: null,
-        isLoggedIn: false,
+        adminUser: null, // To store logged-in user info
     },
 
     /**
-     * Initializes the login flow.
+     * Initializes the Firebase auth listener. This is the new entry point.
      */
     init() {
-        // Load theme preference early
-        const savedTheme = localStorage.getItem('faceAttend_theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.getElementById('themeToggle').textContent = savedTheme === 'light' ? '🌙' : '☀️';
-        }
-        
-        // Setup login/splash event listeners
-        document.getElementById('enter-app-btn').addEventListener('click', () => {
-            document.getElementById('splash-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
+        document.addEventListener('firebase-ready', () => {
+            const auth = window.auth;
+            window.onAuthStateChanged(auth, user => {
+                if (user) {
+                    // User is signed in.
+                    this.state.adminUser = user;
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    this.startApp();
+                } else {
+                    // User is signed out.
+                    this.state.adminUser = null;
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    document.getElementById('app-container').classList.add('hidden');
+                }
+            });
+
+            document.getElementById('login-btn').addEventListener('click', this.handleLogin);
         });
-        document.getElementById('login-form').addEventListener('submit', this.handleLogin.bind(this));
-        
-        console.log("FaceAttend ready. Waiting for admin login.");
     },
     
     /**
-     * Handles the admin login attempt.
-     * @param {Event} event - The form submission event.
+     * Handles the Google Sign-In process using the Firebase SDK.
      */
-    handleLogin(event) {
-        event.preventDefault();
-        const email = document.getElementById('admin-email').value;
-        if (email.toLowerCase() === this.state.settings.adminEmail) {
-            this.state.isLoggedIn = true;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            this.startApp();
-        } else {
-            ui.showToast("Invalid admin email.", "error");
-        }
+    handleLogin() {
+        const provider = new window.GoogleAuthProvider();
+        const auth = window.auth;
+        const authStatus = document.getElementById('auth-status');
+        authStatus.textContent = 'Opening Google Sign-in...';
+        window.signInWithPopup(auth, provider)
+            .then((result) => {
+                authStatus.textContent = `Welcome, ${result.user.displayName}!`;
+                // onAuthStateChanged will handle showing the app
+            }).catch((error) => {
+                console.error("Authentication Error:", error);
+                authStatus.textContent = `Login Failed: ${error.message}`;
+                ui.showToast(`Login Failed: ${error.code}`, 'error');
+            });
     },
 
     /**
      * Starts the main application after a successful login.
+     * Loads data from Firestore and initializes the UI and face models.
      */
     async startApp() {
-        // Load data and setup main app event listeners
-        const { students, attendanceRecords, settings } = db.load();
+        ui.showLoading(true, "Loading admin data...");
+        const { students, attendanceRecords, settings } = await dbHandler.load(this.state.adminUser.uid);
         this.state.students = students;
         this.state.attendanceRecords = attendanceRecords;
         this.state.settings = { ...this.state.settings, ...settings };
-
+        
         this.setupMainAppEventListeners();
         this.refreshUI();
         await face.loadModels();
         face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
-        console.log("FaceAttend Initialized and running.");
+        ui.showLoading(false);
+        console.log("FaceAttend Initialized and running for admin:", this.state.adminUser.email);
     },
 
     /**
-     * Binds all necessary event listeners for the main application.
+     * Binds all necessary event listeners for the main application UI.
      */
     setupMainAppEventListeners() {
+        // Logout Button
+        document.getElementById('logout-btn').addEventListener('click', () => window.signOut(window.auth));
+
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => 
             btn.addEventListener('click', () => ui.showSection(btn.dataset.section))
@@ -100,12 +109,13 @@ const app = {
         document.getElementById('exportCSV').addEventListener('click', this.exportCSV.bind(this));
         document.getElementById('exportJSON').addEventListener('click', this.exportJSON.bind(this));
 
+
         // Admin
         document.getElementById('recognitionThreshold').addEventListener('input', e => {
             document.getElementById('thresholdValue').textContent = e.target.value;
         });
         document.getElementById('saveSettings').addEventListener('click', this.saveSettings.bind(this));
-        document.getElementById('backupData').addEventListener('click', () => db.backup(this.state));
+        document.getElementById('backupData').addEventListener('click', () => dbHandler.backup(this.state));
         document.getElementById('restoreData').addEventListener('click', () => document.getElementById('restoreFile').click());
         document.getElementById('restoreFile').addEventListener('change', this.restoreData.bind(this));
         document.getElementById('clearAllData').addEventListener('click', this.clearAllData.bind(this));
@@ -115,8 +125,10 @@ const app = {
      * Refreshes all UI components with current state data.
      */
     refreshUI() {
+        if (!this.state.adminUser) return;
         ui.refresh(this.state);
-        // Also update admin settings inputs
+        document.getElementById('welcome-message').textContent = `Welcome, ${this.state.adminUser.displayName.split(' ')[0]}`;
+        document.getElementById('gemini-api-key').value = this.state.settings.geminiApiKey || '';
         document.getElementById('recognitionThreshold').value = this.state.settings.recognitionThreshold;
         document.getElementById('thresholdValue').textContent = this.state.settings.recognitionThreshold;
         document.getElementById('sessionTimeout').value = this.state.settings.sessionTimeout;
@@ -138,6 +150,9 @@ const app = {
         document.getElementById('startRegistrationCamera').disabled = false;
         document.getElementById('capturePhoto').disabled = true;
         document.getElementById('stopRegistrationCamera').disabled = true;
+        document.getElementById('capturedPhotoPreview').style.display = 'none';
+        document.getElementById('registerStudent').style.display = 'none';
+        this.tempPhotoData = null;
     },
 
     capturePhoto() {
@@ -146,7 +161,7 @@ const app = {
             document.getElementById('previewImage').src = photoData;
             document.getElementById('capturedPhotoPreview').style.display = 'block';
             document.getElementById('registerStudent').style.display = 'block';
-            this.tempPhotoData = photoData; // Store temporarily
+            this.tempPhotoData = photoData;
         }
     },
 
@@ -155,6 +170,14 @@ const app = {
             ui.showToast('Please capture a photo first.', 'warning');
             return;
         }
+
+        const qualityCheck = await face.analyzeImageQualityWithGemini(this.state.settings.geminiApiKey, this.tempPhotoData);
+        if (!qualityCheck.success) {
+            ui.showToast(`Photo rejected: ${qualityCheck.reason}`, 'error');
+            return;
+        }
+        ui.showToast(`AI Quality Check: ${qualityCheck.reason}`, 'success');
+
         const student = {
             id: document.getElementById('studentId').value,
             name: document.getElementById('studentName').value,
@@ -163,8 +186,9 @@ const app = {
             email: document.getElementById('studentEmail').value,
             photo: this.tempPhotoData,
         };
+
         if (!student.id || !student.name || !student.course) {
-            ui.showToast('Please fill all required fields.', 'error');
+            ui.showToast('Please fill all required student fields.', 'error');
             return;
         }
         if (this.state.students.some(s => s.id === student.id)) {
@@ -172,49 +196,47 @@ const app = {
             return;
         }
 
-        ui.showLoading(true, 'Analyzing face...');
+        ui.showLoading(true, 'Creating face signature...');
         const img = new Image();
         img.src = student.photo;
         img.onload = async () => {
             const descriptor = await face.getDescriptor(img);
             if (!descriptor) {
                 ui.showLoading(false);
-                ui.showToast('Could not detect a face. Please try again with better lighting.', 'error');
+                ui.showToast('Could not create face signature. Please try another photo.', 'error');
                 return;
             }
             student.faceDescriptor = descriptor;
             this.state.students.push(student);
-            db.save(this.state);
+            
+            await dbHandler.save(this.state.adminUser.uid, this.state);
             face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
             this.refreshUI();
 
-            // Reset form
             document.getElementById('studentRegistrationForm').reset();
-            document.getElementById('capturedPhotoPreview').style.display = 'none';
-            document.getElementById('registerStudent').style.display = 'none';
-            this.tempPhotoData = null;
             this.stopRegistrationCamera();
             ui.showLoading(false);
             ui.showToast('Student registered successfully!', 'success');
         };
     },
 
-    removeStudent(studentId) {
-        if (confirm(`Are you sure you want to remove student ${studentId}?`)) {
+    async removeStudent(studentId) {
+        if (confirm(`Are you sure you want to remove student ${studentId}? This is permanent.`)) {
             this.state.students = this.state.students.filter(s => s.id !== studentId);
-            db.save(this.state);
+            await dbHandler.deleteStudent(this.state.adminUser.uid, studentId);
             face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
             this.refreshUI();
-            ui.showToast('Student removed.', 'success');
+            ui.showToast('Student removed from database.', 'success');
         }
     },
-
+    
     // --- ATTENDANCE LOGIC ---
     startSession() {
         const course = document.getElementById('sessionCourse').value;
         if (!course) { ui.showToast('Please select a course.', 'warning'); return; }
 
         this.state.currentSession = {
+            id: `session_${Date.now()}`,
             course,
             date: document.getElementById('sessionDate').value,
             startTime: document.getElementById('sessionStartTime').value,
@@ -228,14 +250,16 @@ const app = {
         document.getElementById('sessionStatus').textContent = 'Session Active';
         document.getElementById('sessionStatus').classList.add('active');
         this.refreshUI();
+        ui.showToast(`Session for ${course} started.`, 'success');
     },
 
-    endSession() {
+    async endSession() {
         if (!this.state.currentSession) return;
         this.stopAttendance();
         this.state.attendanceRecords.push(this.state.currentSession);
+        
+        await dbHandler.save(this.state.adminUser.uid, this.state);
         this.state.currentSession = null;
-        db.save(this.state);
         
         document.getElementById('startSession').disabled = false;
         document.getElementById('endSession').disabled = true;
@@ -243,7 +267,7 @@ const app = {
         document.getElementById('sessionStatus').textContent = 'No Active Session';
         document.getElementById('sessionStatus').classList.remove('active');
         this.refreshUI();
-        ui.showToast('Session ended and saved.', 'success');
+        ui.showToast('Session ended and saved to database.', 'success');
     },
 
     async startAttendance() {
@@ -255,13 +279,16 @@ const app = {
 
             this.state.recognitionInterval = setInterval(async () => {
                 const videoEl = document.getElementById('attendanceVideo');
+                if (!videoEl || videoEl.paused || videoEl.ended) {
+                    this.stopAttendance();
+                    return;
+                }
                 const descriptor = await face.getDescriptor(videoEl);
                 if (descriptor) {
                     const match = face.findBestMatch(descriptor);
                     if (match && match.label !== 'unknown') {
                         const student = this.state.students.find(s => s.id === match.label);
-                        if (student) {
-                            // Check if already marked
+                        if (student && this.state.currentSession) {
                             const isMarked = this.state.currentSession.attendanceRecords.some(r => r.studentId === student.id);
                             if (!isMarked) {
                                 this.state.currentSession.attendanceRecords.push({
@@ -279,7 +306,7 @@ const app = {
                         document.getElementById('recognitionStatus').textContent = 'Unknown Face';
                     }
                 }
-            }, 2000); // Scan every 2 seconds
+            }, 2000);
         }
     },
     
@@ -289,9 +316,12 @@ const app = {
             clearInterval(this.state.recognitionInterval);
             this.state.recognitionInterval = null;
         }
-        document.getElementById('startAttendanceCamera').disabled = false;
-        document.getElementById('stopAttendanceCamera').disabled = true;
-        document.getElementById('recognitionStatus').textContent = 'Camera Inactive';
+        const startBtn = document.getElementById('startAttendanceCamera');
+        if (startBtn) {
+            startBtn.disabled = this.state.currentSession ? false : true;
+            document.getElementById('stopAttendanceCamera').disabled = true;
+            document.getElementById('recognitionStatus').textContent = 'Camera Inactive';
+        }
     },
 
     // --- REPORTS & ADMIN LOGIC ---
@@ -303,11 +333,9 @@ const app = {
         
         let results = [];
         this.state.attendanceRecords.forEach(session => {
-            // Filter session
             if ((course && session.course !== course) || (session.date < from) || (session.date > to)) {
                 return;
             }
-            // Filter records within session
             session.attendanceRecords.forEach(rec => {
                 if (!studentId || rec.studentId === studentId) {
                     results.push({ ...rec, course: session.course, date: session.date });
@@ -324,51 +352,94 @@ const app = {
             Array.from(tr.querySelectorAll('th, td')).map(cell => `"${cell.textContent}"`).join(',')
         ).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
-        db.download(blob, 'report.csv');
+        dbHandler.download(blob, 'report.csv');
     },
 
     exportJSON() {
-        this.generateReport(); // First, filter data based on UI
-        const reportData = ui.attendanceChart.data.datasets[0].data; // Get data from chart
-        if (reportData.length === 0) { ui.showToast('No data to export.', 'warning'); return; }
-        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-        db.download(blob, 'report.json');
-    },
+        this.generateReport(); // Ensure results are filtered
+        const table = document.querySelector('#reportResults table');
+        if (!table) { ui.showToast('Generate a report first to export.', 'warning'); return; }
+        
+        // Re-filter the data just like in generateReport to get the raw objects
+        const course = document.getElementById('reportCourse').value;
+        const from = document.getElementById('reportDateFrom').value;
+        const to = document.getElementById('reportDateTo').value;
+        const studentId = document.getElementById('reportStudent').value;
+        let results = [];
+        this.state.attendanceRecords.forEach(session => {
+            if ((course && session.course !== course) || (session.date < from) || (session.date > to)) {
+                return;
+            }
+            session.attendanceRecords.forEach(rec => {
+                if (!studentId || rec.studentId === studentId) {
+                    results.push({ ...rec, course: session.course, date: session.date });
+                }
+            });
+        });
 
-    saveSettings() {
-        this.state.settings = {
-            recognitionThreshold: document.getElementById('recognitionThreshold').value,
-            sessionTimeout: document.getElementById('sessionTimeout').value,
-            livenessDetection: document.getElementById('livenessDetection').checked,
-        };
-        db.save(this.state);
-        face.createMatcher(this.state.students, this.state.settings.recognitionThreshold); // Re-create matcher with new threshold
-        ui.showToast('Settings saved successfully.', 'success');
+        if (results.length === 0) { ui.showToast('No data to export.', 'warning'); return; }
+        const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+        dbHandler.download(blob, 'report.json');
+    },
+    
+    async saveSettings() {
+        this.state.settings.geminiApiKey = document.getElementById('gemini-api-key').value;
+        this.state.settings.recognitionThreshold = document.getElementById('recognitionThreshold').value;
+        this.state.settings.sessionTimeout = document.getElementById('sessionTimeout').value;
+        this.state.settings.livenessDetection = document.getElementById('livenessDetection').checked;
+        
+        await dbHandler.save(this.state.adminUser.uid, this.state);
+        face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
+        ui.showToast('Settings saved to database.', 'success');
     },
 
     async restoreData(event) {
+        if (!confirm("This will overwrite your current cloud data with the contents of the backup file. This cannot be undone. Are you sure?")) {
+            event.target.value = ''; // Reset file input
+            return;
+        }
+        
         try {
-            const data = await db.handleRestoreFile(event);
+            const fileReader = new Promise((resolve, reject) => {
+                const file = event.target.files[0];
+                if (!file) { reject('No file selected.'); return; }
+                const reader = new FileReader();
+                reader.onload = e => resolve(JSON.parse(e.target.result));
+                reader.onerror = () => reject('Error reading file.');
+                reader.readAsText(file);
+            });
+            const data = await fileReader;
+            
+            if (!data.students || !data.attendanceRecords || !data.settings) {
+                throw new Error("Invalid backup file format.");
+            }
+
             this.state.students = data.students;
             this.state.attendanceRecords = data.attendanceRecords;
             this.state.settings = data.settings;
-            db.save(this.state);
+            await dbHandler.save(this.state.adminUser.uid, this.state);
             face.createMatcher(this.state.students, this.state.settings.recognitionThreshold);
             this.refreshUI();
-            ui.showToast('Data restored successfully!', 'success');
+            ui.showToast('Data restored and saved to cloud!', 'success');
         } catch (error) {
-            ui.showToast(error, 'error');
+            ui.showToast(error.message || 'Failed to restore data.', 'error');
+        } finally {
+      event.target.value = ''; // Reset file input
         }
     },
 
-    clearAllData() {
-        if (db.clearAll()) {
-            this.state = { students: [], attendanceRecords: [], settings: {}, currentSession: null, recognitionInterval: null, isLoggedIn: true };
+    async clearAllData() {
+        if (confirm('Are you sure you want to clear ALL student and attendance data from the cloud? This is permanent.')) {
+            // This approach saves an empty state over the old one.
+            this.state.students = [];
+            this.state.attendanceRecords = [];
+            await dbHandler.save(this.state.adminUser.uid, this.state);
             face.createMatcher([]);
             this.refreshUI();
-            ui.showToast('All application data has been cleared.', 'success');
+            ui.showToast('All cloud data has been cleared.', 'success');
         }
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => app.init());
+// Initial entry point
+app.init();
