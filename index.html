@@ -9,36 +9,10 @@
     <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Firebase SDKs - This block is corrected -->
-    <script type="module">
-        // Import the necessary functions from the Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        // Import your configuration from the separate config file
-        import { firebaseConfig } from './firebase-config.js';
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        
-        // **THE FIX**: Attach the initialized services and functions to the global 'window' object.
-        // This makes them accessible to all other scripts, especially app.js.
-        window.auth = getAuth(app);
-        window.db = getFirestore(app);
-        window.GoogleAuthProvider = GoogleAuthProvider;
-        window.signInWithPopup = signInWithPopup;
-        window.onAuthStateChanged = onAuthStateChanged;
-        window.signOut = signOut;
-
-        // Dispatch a custom event to signal that Firebase is ready.
-        // app.js will listen for this before it runs.
-        document.dispatchEvent(new Event('firebase-ready'));
-    </script>
-
 </head>
 <body>
 
+    <!-- All your HTML content from before remains the same -->
     <!-- Login Screen -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
@@ -52,7 +26,6 @@
             <p id="auth-status" class="auth-status"></p>
         </div>
     </div>
-
     <!-- Main Application Container (Initially Hidden) -->
     <div id="app-container" class="hidden">
         <nav class="nav">
@@ -69,9 +42,8 @@
                 </div>
             </div>
         </nav>
-
         <main class="main-container">
-            <!-- Dashboard Section -->
+             <!-- Dashboard Section -->
             <section id="dashboard" class="section active">
                 <div class="container">
                     <div class="section-header">
@@ -86,9 +58,8 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Registration Section -->
-            <section id="registration" class="section">
+            <!-- Other sections here -->
+             <section id="registration" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Student Registration</h1></div>
                     <div class="registration-container">
@@ -126,8 +97,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Attendance Section -->
             <section id="attendance" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Mark Attendance</h1></div>
@@ -159,8 +128,6 @@
                     </div>
                 </div>
             </section>
-            
-            <!-- Reports Section -->
             <section id="reports" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Attendance Reports</h1></div>
@@ -177,8 +144,6 @@
                     <div class="card"><div class="card-header"><h3>Report Results</h3></div><div class="card-content"><div id="reportResults" class="report-table"></div></div></div>
                 </div>
             </section>
-            
-            <!-- Admin Section -->
             <section id="admin" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Admin Panel</h1></div>
@@ -209,8 +174,31 @@
     <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"><div class="spinner"></div><p id="loadingText">Loading...</p></div></div>
     <div id="toast" class="toast"></div>
 
-    <!-- Application Scripts: Only app.js is needed here now -->
-    <script src="app.js" type="module"></script>
-    
+    <!-- **THE FIX IS HERE**: A single script at the end of the body is the entry point. -->
+    <script type="module">
+        // 1. Import Firebase functions and your config
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { firebaseConfig } from './firebase-config.js';
+
+        // 2. Initialize Firebase and attach services to the global `window` object
+        // This makes them reliably available to all other modules.
+        const firebaseApp = initializeApp(firebaseConfig);
+        window.auth = getAuth(firebaseApp);
+        window.db = getFirestore(firebaseApp);
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.signInWithPopup = signInWithPopup;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signOut = signOut;
+
+        // 3. NOW that Firebase is guaranteed to be ready, import your main app logic
+        import { app as faceAttendApp } from './app.js';
+        
+        // 4. Start your application
+        faceAttendApp.init();
+    </script>
 </body>
 </html>
+
+
