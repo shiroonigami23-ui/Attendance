@@ -10,15 +10,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs - This block is corrected -->
     <script type="module">
-        // This block initializes Firebase and makes key functions globally available on the `window` object
+        // Import the necessary functions from the Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Import your configuration from the separate config file
         import { firebaseConfig } from './firebase-config.js';
         
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        
+        // **THE FIX**: Attach the initialized services and functions to the global 'window' object.
+        // This makes them accessible to all other scripts, especially app.js.
         window.auth = getAuth(app);
         window.db = getFirestore(app);
         window.GoogleAuthProvider = GoogleAuthProvider;
@@ -26,7 +31,8 @@
         window.onAuthStateChanged = onAuthStateChanged;
         window.signOut = signOut;
 
-        // Dispatch a custom event to let our app.js know that Firebase is ready
+        // Dispatch a custom event to signal that Firebase is ready.
+        // app.js will listen for this before it runs.
         document.dispatchEvent(new Event('firebase-ready'));
     </script>
 
@@ -203,16 +209,8 @@
     <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"><div class="spinner"></div><p id="loadingText">Loading...</p></div></div>
     <div id="toast" class="toast"></div>
 
-    <!-- Application Scripts: ALL are now modules -->
-    <script src="ui.js" type="module"></script>
-    <script src="camera.js" type="module"></script>
-    <script src="face.js" type="module"></script>
-    <script src="database.js" type="module"></script>
+    <!-- Application Scripts: Only app.js is needed here now -->
     <script src="app.js" type="module"></script>
+    
 </body>
 </html>
-
-
-
-
-
