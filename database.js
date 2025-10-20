@@ -1,9 +1,9 @@
-// database.js
+/**
+ * database.js
+ * This module handles all Firestore interactions.
+ */
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/**
- * Handles all data operations for a specific admin's data (students, attendance).
- */
 export const dbHandler = {
     async save(adminId, state) {
         if (!adminId) return;
@@ -13,6 +13,8 @@ export const dbHandler = {
         const settingsRef = doc(db, "admins", adminId, "config", "settings");
         batch.set(settingsRef, state.settings);
 
+        // This is not efficient for large datasets, but simple for this app size.
+        // A better approach for scale would be individual saves, not batching everything.
         state.students.forEach(student => {
             const studentRef = doc(db, "admins", adminId, "students", student.id);
             batch.set(studentRef, student);
@@ -23,12 +25,7 @@ export const dbHandler = {
              batch.set(recordRef, record);
         });
 
-        try {
-            await batch.commit();
-        } catch (error) {
-            console.error("Error saving data to Firestore:", error);
-            ui.showToast("Could not save data.", "error");
-        }
+        await batch.commit();
     },
 
     async load(adminId) {
@@ -50,7 +47,6 @@ export const dbHandler = {
             return { students, attendanceRecords, settings };
         } catch (error) {
             console.error("Error loading data from Firestore:", error);
-            ui.showToast("Failed to load data.", "error");
             return { students: [], attendanceRecords: [], settings: {} };
         }
     },
@@ -59,11 +55,7 @@ export const dbHandler = {
         if (!adminId || !studentId) return;
         const db = getFirestore();
         const studentRef = doc(db, "admins", adminId, "students", studentId);
-        try {
-            await deleteDoc(studentRef);
-        } catch(error) {
-            console.error("Error deleting student:", error);
-        }
+        await deleteDoc(studentRef);
     },
     
     download(blob, filename) {
@@ -82,17 +74,12 @@ export const dbHandler = {
             students: state.students,
             attendanceRecords: state.attendanceRecords,
             settings: state.settings,
-            backupDate: new Date().toISOString()
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         this.download(blob, `faceattend-backup-${Date.now()}.json`);
-        ui.showToast("Backup created successfully!", "success");
     },
 };
 
-/**
- * Handles checking and managing the global list of admins.
- */
 export const adminListHandler = {
     async getAdmins() {
         const db = getFirestore();
@@ -104,7 +91,6 @@ export const adminListHandler = {
     async addAdmin(user) {
         if (!user || !user.uid) return;
         const db = getFirestore();
-        // Use setDoc with the user's UID as the document ID to prevent duplicates
         const adminRef = doc(db, "adminsList", user.uid);
         await setDoc(adminRef, {
             email: user.email,
