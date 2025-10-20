@@ -1,13 +1,14 @@
 /**
  * app.js
- * This is the main application file. It orchestrates all other modules.
+ * The main application logic. It now exports the 'app' object and does not call init() itself.
  */
 import { dbHandler, adminListHandler } from './database.js';
 import { ui } from './ui.js';
 import { camera } from './camera.js';
 import { face } from './face.js';
 
-const app = {
+// **THE FIX**: Export the app object so index.html can import and run it.
+export const app = {
     state: {
         students: [],
         attendanceRecords: [],
@@ -17,24 +18,27 @@ const app = {
         adminUser: null,
     },
 
+    // **THE FIX**: This function is now called from index.html after Firebase is ready.
     init() {
-        document.addEventListener('firebase-ready', () => {
-            const auth = window.auth;
-            window.onAuthStateChanged(auth, user => {
-                if (user && user.isVerifiedAdmin) {
-                    this.state.adminUser = user;
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('app-container').classList.remove('hidden');
-                    this.startApp();
-                } else {
-                    this.state.adminUser = null;
-                    document.getElementById('login-screen').classList.remove('hidden');
-                    document.getElementById('app-container').classList.add('hidden');
-                    if (user) window.signOut(auth);
-                }
-            });
-            document.getElementById('login-btn').addEventListener('click', this.handleLogin.bind(this));
+        const auth = window.auth; // Guaranteed to exist now
+        
+        // Listen for authentication state changes
+        window.onAuthStateChanged(auth, user => {
+            if (user && user.isVerifiedAdmin) {
+                this.state.adminUser = user;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                this.startApp();
+            } else {
+                this.state.adminUser = null;
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
+                if (user) window.signOut(auth); // Sign out users who are not verified admins
+            }
         });
+
+        // Attach the login button click listener
+        document.getElementById('login-btn').addEventListener('click', this.handleLogin.bind(this));
     },
     
     async handleLogin() {
@@ -52,11 +56,10 @@ const app = {
             const isExistingAdmin = admins.some(admin => admin.uid === user.uid);
 
             if (isExistingAdmin) {
-                user.isVerifiedAdmin = true; // Flag for onAuthStateChanged
-                // Let onAuthStateChanged handle UI update
+                user.isVerifiedAdmin = true; // This flag lets onAuthStateChanged know to grant access
             } else if (admins.length < 10) {
                 await adminListHandler.addAdmin(user);
-                user.isVerifiedAdmin = true; // Flag for onAuthStateChanged
+                user.isVerifiedAdmin = true;
             } else {
                 authStatus.textContent = 'Login failed: Admin registration is closed.';
                 ui.showToast('The maximum number of admins has been reached.', 'error');
@@ -96,7 +99,6 @@ const app = {
         document.getElementById('logout-btn').addEventListener('click', () => window.signOut(window.auth));
         document.getElementById('themeToggle').addEventListener('click', ui.toggleTheme);
         
-        // Registration
         document.getElementById('startRegistrationCamera').addEventListener('click', this.startRegistrationCamera.bind(this));
         document.getElementById('capturePhoto').addEventListener('click', this.capturePhoto.bind(this));
         document.getElementById('registerStudent').addEventListener('click', this.registerStudent.bind(this));
@@ -108,18 +110,18 @@ const app = {
             }
         });
         
-        // Attendance
         document.getElementById('startSession').addEventListener('click', this.startSession.bind(this));
         document.getElementById('endSession').addEventListener('click', this.endSession.bind(this));
         document.getElementById('startAttendanceCamera').addEventListener('click', this.startAttendance.bind(this));
         document.getElementById('stopAttendanceCamera').addEventListener('click', this.stopAttendance.bind(this));
 
-        // Admin
         document.getElementById('saveSettings').addEventListener('click', this.saveSettings.bind(this));
         document.getElementById('backupData').addEventListener('click', () => dbHandler.backup(this.state));
         document.getElementById('clearAllData').addEventListener('click', this.clearAllData.bind(this));
+        document.getElementById('generateReport').addEventListener('click', () => ui.displayReportResults(this.state.attendanceRecords));
     },
-
+    // The rest of the functions (startRegistrationCamera, registerStudent, etc.) are the same as before
+    // No changes are needed below this line in this file.
     async startRegistrationCamera() {
         if (await camera.start('registrationVideo')) {
             document.getElementById('capturePhoto').disabled = false;
@@ -134,6 +136,7 @@ const app = {
             this.tempPhotoData = photoData;
         }
         camera.stop();
+        document.getElementById('capturePhoto').disabled = true;
     },
 
     async registerStudent() {
@@ -151,11 +154,15 @@ const app = {
         if (!student.id || !student.name) return ui.showToast('Student ID and Name are required.', 'error');
         if (this.state.students.some(s => s.id === student.id)) return ui.showToast('Student with this ID already exists.', 'error');
 
+        ui.showLoading(true, 'Analyzing face...');
         const img = new Image();
         img.src = student.photo;
         img.onload = async () => {
             const descriptor = await face.getDescriptor(img);
-            if (!descriptor) return ui.showToast('Could not find a face in the photo. Please try again.', 'error');
+            if (!descriptor) {
+                ui.showLoading(false);
+                return ui.showToast('Could not find a face in the photo. Please try again.', 'error');
+            }
             
             student.faceDescriptor = Array.from(descriptor);
             this.state.students.push(student);
@@ -166,6 +173,7 @@ const app = {
             document.getElementById('studentRegistrationForm').reset();
             document.getElementById('capturedPhotoPreview').style.display = 'none';
             this.tempPhotoData = null;
+            ui.showLoading(false);
             ui.showToast('Student registered successfully!', 'success');
         };
     },
@@ -224,6 +232,7 @@ const app = {
         
         this.state.recognitionInterval = setInterval(async () => {
             const videoEl = document.getElementById('attendanceVideo');
+            if(!videoEl.srcObject) return; // Stop if camera was stopped
             const descriptor = await face.getDescriptor(videoEl);
             if (descriptor) {
                 const match = face.findBestMatch(descriptor);
@@ -273,4 +282,4 @@ const app = {
     }
 };
 
-app.init();
+// NOTE: app.init() is no longer called here. It is called from index.html
