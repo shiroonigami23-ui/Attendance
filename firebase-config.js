@@ -1,3 +1,5 @@
+// This file exports your Firebase project configuration.
+// It is imported by index.html to initialize the connection.
 export const firebaseConfig = {
   apiKey: "AIzaSyBKSEoZyaLYRftuzfzn8H68SA6HM1qvOOk",
   authDomain: "attendance-app-92ed7.firebaseapp.com",
