@@ -96,7 +96,13 @@ export const adminListHandler = {
         const adminsSnapshot = await getDocs(collection(db, "adminsList"));
         return adminsSnapshot.docs.map(doc => doc.data());
     },
-    
+     async isAdmin(uid) {
+        if (!uid) return false;
+        const db = getFirestore();
+        const adminRef = doc(db, "adminsList", uid);
+        const adminSnap = await getDoc(adminRef);
+        return adminSnap.exists();
+    },
     async addAdmin(user) {
         if (!user || !user.uid) return;
         const db = getFirestore();
