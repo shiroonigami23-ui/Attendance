@@ -1,28 +1,29 @@
 /**
  * app.js
- * The main application logic. It now exports the 'app' object and does not call init() itself.
+ * The main application logic, now using PythonAnywhere for image storage.
  */
 import { dbHandler, adminListHandler } from './database.js';
 import { ui } from './ui.js';
 import { camera } from './camera.js';
 import { face } from './face.js';
 
-// **THE FIX**: Export the app object so index.html can import and run it.
 export const app = {
     state: {
         students: [],
         attendanceRecords: [],
-        settings: { geminiApiKey: '' },
+        settings: {
+            geminiApiKey: '',
+            // ** YOUR PYTHONANYWHERE URL IS NOW CORRECTLY ADDED **
+            pythonAnywhereUrl: 'https://Kishan2269420.pythonanywhere.com' 
+        },
         currentSession: null,
         recognitionInterval: null,
         adminUser: null,
     },
 
-    // **THE FIX**: This function is now called from index.html after Firebase is ready.
     init() {
-        const auth = window.auth; // Guaranteed to exist now
+        const auth = window.auth;
         
-        // Listen for authentication state changes
         window.onAuthStateChanged(auth, user => {
             if (user && user.isVerifiedAdmin) {
                 this.state.adminUser = user;
@@ -33,11 +34,10 @@ export const app = {
                 this.state.adminUser = null;
                 document.getElementById('login-screen').classList.remove('hidden');
                 document.getElementById('app-container').classList.add('hidden');
-                if (user) window.signOut(auth); // Sign out users who are not verified admins
+                if (user) window.signOut(auth);
             }
         });
 
-        // Attach the login button click listener
         document.getElementById('login-btn').addEventListener('click', this.handleLogin.bind(this));
     },
     
@@ -56,7 +56,7 @@ export const app = {
             const isExistingAdmin = admins.some(admin => admin.uid === user.uid);
 
             if (isExistingAdmin) {
-                user.isVerifiedAdmin = true; // This flag lets onAuthStateChanged know to grant access
+                user.isVerifiedAdmin = true;
             } else if (admins.length < 10) {
                 await adminListHandler.addAdmin(user);
                 user.isVerifiedAdmin = true;
@@ -79,7 +79,10 @@ export const app = {
         if (!this.state.adminUser) return;
         ui.showLoading(true, "Loading your data...");
         const data = await dbHandler.load(this.state.adminUser.uid);
+        
+        const defaultSettings = this.state.settings;
         this.state = { ...this.state, ...data };
+        this.state.settings = { ...defaultSettings, ...data.settings };
         
         this.setupEventListeners();
         ui.refresh(this.state);
@@ -120,8 +123,7 @@ export const app = {
         document.getElementById('clearAllData').addEventListener('click', this.clearAllData.bind(this));
         document.getElementById('generateReport').addEventListener('click', () => ui.displayReportResults(this.state.attendanceRecords));
     },
-    // The rest of the functions (startRegistrationCamera, registerStudent, etc.) are the same as before
-    // No changes are needed below this line in this file.
+
     async startRegistrationCamera() {
         if (await camera.start('registrationVideo')) {
             document.getElementById('capturePhoto').disabled = false;
@@ -142,21 +144,29 @@ export const app = {
     async registerStudent() {
         if (!this.tempPhotoData) return ui.showToast('Please capture a photo first.', 'warning');
         
-        const qualityCheck = await face.analyzeImageQualityWithGemini(this.state.settings.geminiApiKey, this.tempPhotoData);
-        if (!qualityCheck.success) return ui.showToast(`Photo rejected: ${qualityCheck.reason}`, 'error');
-        
         const student = {
             id: document.getElementById('studentId').value.trim(),
             name: document.getElementById('studentName').value.trim(),
             course: document.getElementById('studentCourse').value,
-            photo: this.tempPhotoData,
+            email: document.getElementById('studentEmail').value.trim(),
         };
+
         if (!student.id || !student.name) return ui.showToast('Student ID and Name are required.', 'error');
         if (this.state.students.some(s => s.id === student.id)) return ui.showToast('Student with this ID already exists.', 'error');
 
+        ui.showLoading(true, 'Uploading photo to server...');
+
+        const photoURL = await dbHandler.uploadImage(this.state.settings.pythonAnywhereUrl, student.id, this.tempPhotoData);
+        if (!photoURL) {
+            ui.showLoading(false);
+            return ui.showToast('Could not upload photo. Check backend server.', 'error');
+        }
+        student.photoURL = photoURL;
+
         ui.showLoading(true, 'Analyzing face...');
         const img = new Image();
-        img.src = student.photo;
+        img.crossOrigin = 'Anonymous';
+        img.src = student.photoURL;
         img.onload = async () => {
             const descriptor = await face.getDescriptor(img);
             if (!descriptor) {
@@ -167,6 +177,7 @@ export const app = {
             student.faceDescriptor = Array.from(descriptor);
             this.state.students.push(student);
             await dbHandler.save(this.state.adminUser.uid, this.state);
+            
             face.createMatcher(this.state.students);
             ui.refresh(this.state);
             
@@ -176,6 +187,10 @@ export const app = {
             ui.showLoading(false);
             ui.showToast('Student registered successfully!', 'success');
         };
+        img.onerror = () => {
+             ui.showLoading(false);
+             ui.showToast('Could not load image from server for analysis.', 'error');
+        }
     },
     
     async removeStudent(studentId) {
@@ -191,14 +206,7 @@ export const app = {
     startSession() {
         const course = document.getElementById('sessionCourse').value;
         if (!course) return ui.showToast('Please select a course for the session.', 'warning');
-        
-        this.state.currentSession = {
-            id: `session_${Date.now()}`,
-            course: course,
-            date: new Date().toISOString().slice(0,10),
-            attendanceRecords: [],
-        };
-        
+        this.state.currentSession = { id: `session_${Date.now()}`, course: course, date: new Date().toISOString().slice(0,10), attendanceRecords: [] };
         document.getElementById('startSession').disabled = true;
         document.getElementById('endSession').disabled = false;
         document.getElementById('startAttendanceCamera').disabled = false;
@@ -213,7 +221,6 @@ export const app = {
             await dbHandler.save(this.state.adminUser.uid, this.state);
         }
         this.state.currentSession = null;
-        
         document.getElementById('startSession').disabled = false;
         document.getElementById('endSession').disabled = true;
         document.getElementById('startAttendanceCamera').disabled = true;
@@ -226,25 +233,20 @@ export const app = {
         if (!this.state.currentSession) return ui.showToast('You must start a session first.', 'warning');
         if (!face.faceMatcher) return ui.showToast('No students registered to match against.', 'warning');
         if (!await camera.start('attendanceVideo')) return;
-
         document.getElementById('startAttendanceCamera').disabled = true;
         document.getElementById('stopAttendanceCamera').disabled = false;
-        
         this.state.recognitionInterval = setInterval(async () => {
             const videoEl = document.getElementById('attendanceVideo');
-            if(!videoEl.srcObject) return; // Stop if camera was stopped
+            if(!videoEl.srcObject) return;
             const descriptor = await face.getDescriptor(videoEl);
             if (descriptor) {
                 const match = face.findBestMatch(descriptor);
                 document.getElementById('recognitionStatus').textContent = `Match: ${match.toString()}`;
-                
                 if (match && match.label !== 'unknown') {
                     const student = this.state.students.find(s => s.id === match.label);
                     const isMarked = this.state.currentSession.attendanceRecords.some(r => r.studentId === student.id);
                     if (student && !isMarked) {
-                        this.state.currentSession.attendanceRecords.push({
-                            studentId: student.id, studentName: student.name, timestamp: new Date().toISOString()
-                        });
+                        this.state.currentSession.attendanceRecords.push({ studentId: student.id, studentName: student.name, timestamp: new Date().toISOString() });
                         ui.updateLiveAttendance(this.state.currentSession);
                         ui.showToast(`${student.name} marked present!`, 'success');
                     }
@@ -281,5 +283,3 @@ export const app = {
         }
     }
 };
-
-// NOTE: app.init() is no longer called here. It is called from index.html
