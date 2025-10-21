@@ -14,19 +14,30 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { firebaseConfig } from './firebase-config.js';
         
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
         // Make Firebase services globally available for all our scripts
+        // This is the CRITICAL CHANGE: We are adding all firestore functions here.
         window.firebase = {
-            auth: getAuth(app),
-            db: getFirestore(app),
+            auth: auth,
+            db: db,
             GoogleAuthProvider: GoogleAuthProvider,
             signInWithPopup: signInWithPopup,
             onAuthStateChanged: onAuthStateChanged,
-            signOut: signOut
+            signOut: signOut,
+            // Firestore Functions
+            doc: doc,
+            getDoc: getDoc,
+            setDoc: setDoc,
+            collection: collection,
+            getDocs: getDocs,
+            writeBatch: writeBatch,
+            deleteDoc: deleteDoc
         };
 
         // Signal that Firebase is ready for the main app script to use
@@ -186,8 +197,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h3>Live Attendance</h3>
-                            <!-- FIX #2: Added the attendance count element -->
-                            <span class="text-secondary">Count: <strong id="attendanceCount">0</strong></span>
+                             <span class="text-secondary">Count: <strong id="attendanceCount">0</strong></span>
                         </div>
                         <div class="card-content">
                             <div id="liveAttendanceList" class="attendance-list"></div>
@@ -205,7 +215,7 @@
                         <div class="card-content">
                              <div class="form-row">
                                 <div class="form-group"><label for="reportCourse">Course</label><select id="reportCourse"><option value="">All Courses</option><option value="CS101">CS101 - Intro to Programming</option><option value="IT205">IT205 - Database Management</option><option value="BA330">BA330 - Marketing Principles</option></select></div>
-                                <div class="form-group"><label for="reportStudent">Student</label><select id="reportStudent"><option value="">All Students</option><!-- Student options are populated dynamically by app.js --></select></div>
+                                <div class="form-group"><label for="reportStudent">Student</label><select id="reportStudent"><option value="">All Students</option></select></div>
                             </div>
                             <button id="generateReport" class="btn btn-primary">Generate Report</button>
                         </div>
@@ -213,7 +223,6 @@
                     <div class="card">
                         <div class="card-header"><h3>Report Results</h3></div>
                         <div class="card-content">
-                            <!-- FIX #4: Added the canvas element for the chart -->
                             <div style="height: 300px; margin-bottom: 1rem; position: relative;">
                                 <canvas id="attendanceChart"></canvas>
                             </div>
