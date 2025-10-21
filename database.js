@@ -24,7 +24,7 @@ export const dbHandler = {
                 throw new Error(`Server responded with ${response.status}: ${errorText}`);
             }
             const result = await response.json();
-            return `${backendUrl}${result.url}`;
+            return new URL(result.url, backendUrl).href;
         } catch (error) {
             console.error("Error uploading image to PythonAnywhere:", error);
             ui.showToast("Failed to upload photo to backend server.", "error");
