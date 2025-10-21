@@ -119,10 +119,10 @@
                             <div class="card-header"><h3>Add New Student</h3></div>
                             <div class="card-content">
                                 <form id="studentRegistrationForm" onsubmit="event.preventDefault();">
-                                    <div class="form-group"><label for="studentId">Student ID</label><input type="text" id="studentId" required></div>
-                                    <div class="form-group"><label for="studentName">Full Name</label><input type="text" id="studentName" required></div>
-                                    <div class="form-group"><label for="studentCourse">Course</label><select id="studentCourse" required><option value="">Select Course</option><option value="Computer Science">Computer Science</option></select></div>
-                                    <div class="form-group"><label for="studentEmail">Email</label><input type="email" id="studentEmail"></div>
+                                    <div class="form-group"><label for="studentId">Student ID</label><input type="text" id="studentId" placeholder="e.g., 12345" required></div>
+                                    <div class="form-group"><label for="studentName">Full Name</label><input type="text" id="studentName" placeholder="e.g., Jane Doe" required></div>
+                                    <div class="form-group"><label for="studentCourse">Course</label><select id="studentCourse" required><option value="">Select Course</option><option value="Computer Science">Computer Science</option><option value="Information Technology">Information Technology</option><option value="Business Administration">Business Administration</option></select></div>
+                                    <div class="form-group"><label for="studentEmail">Email</label><input type="email" id="studentEmail" placeholder="e.g., jane.doe@example.com"></div>
                                 </form>
                             </div>
                         </div>
@@ -161,7 +161,7 @@
                         <div class="card">
                             <div class="card-header"><h3>Session Setup</h3></div>
                             <div class="card-content">
-                                <div class="form-group"><label for="sessionCourse">Course</label><select id="sessionCourse" required><option value="">Select Course</option><option value="CS101">CS101</option></select></div>
+                                <div class="form-group"><label for="sessionCourse">Course</label><select id="sessionCourse" required><option value="">Select Course</option><option value="CS101">CS101 - Intro to Programming</option><option value="IT205">IT205 - Database Management</option><option value="BA330">BA330 - Marketing Principles</option></select></div>
                                 <div class="session-controls">
                                     <button id="startSession" class="btn btn-primary">Start Session</button>
                                     <button id="endSession" class="btn btn-danger" disabled>End Session</button>
@@ -184,13 +184,16 @@
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Live Attendance</h3></div>
-                        <span class="text-secondary">Count: <strong id="attendanceCount">0</strong></span>
-                    </div>
+                        <div class="card-header">
+                            <h3>Live Attendance</h3>
+                            <!-- FIX #2: Added the attendance count element -->
+                            <span class="text-secondary">Count: <strong id="attendanceCount">0</strong></span>
+                        </div>
                         <div class="card-content">
                             <div id="liveAttendanceList" class="attendance-list"></div>
                         </div>
                     </div>
+                </div>
             </section>
 
             <!-- Reports Section -->
@@ -201,8 +204,8 @@
                         <div class="card-header"><h3>Filter Options</h3></div>
                         <div class="card-content">
                              <div class="form-row">
-                                <div class="form-group"><label for="reportCourse">Course</label><select id="reportCourse"><option value="">All Courses</option></select></div>
-                                <div class="form-group"><label for="reportStudent">Student</label><select id="reportStudent"><option value="">All Students</option></select></div>
+                                <div class="form-group"><label for="reportCourse">Course</label><select id="reportCourse"><option value="">All Courses</option><option value="CS101">CS101 - Intro to Programming</option><option value="IT205">IT205 - Database Management</option><option value="BA330">BA330 - Marketing Principles</option></select></div>
+                                <div class="form-group"><label for="reportStudent">Student</label><select id="reportStudent"><option value="">All Students</option><!-- Student options are populated dynamically by app.js --></select></div>
                             </div>
                             <button id="generateReport" class="btn btn-primary">Generate Report</button>
                         </div>
@@ -210,6 +213,10 @@
                     <div class="card">
                         <div class="card-header"><h3>Report Results</h3></div>
                         <div class="card-content">
+                            <!-- FIX #4: Added the canvas element for the chart -->
+                            <div style="height: 300px; margin-bottom: 1rem; position: relative;">
+                                <canvas id="attendanceChart"></canvas>
+                            </div>
                             <div id="reportResults"></div>
                         </div>
                     </div>
@@ -224,7 +231,7 @@
                         <div class="card">
                             <div class="card-header"><h3>System Settings</h3></div>
                             <div class="card-content">
-                                <div class="form-group"><label for="gemini-api-key">Gemini API Key</label><input type="password" id="gemini-api-key"></div>
+                                <div class="form-group"><label for="gemini-api-key">Gemini API Key</label><input type="password" id="gemini-api-key" placeholder="Enter your Google AI API Key"></div>
                                 <button id="saveSettings" class="btn btn-primary">Save Settings</button>
                             </div>
                         </div>
