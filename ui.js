@@ -60,7 +60,7 @@ export const ui = {
         }
         list.innerHTML = students.map(s => `
             <div class="student-card">
-                <img src="${s.photo}" alt="${s.name}" class="student-photo">
+                <img src="${s.photoURL}" alt="${s.name}" class="student-photo">
                 <div class="student-info">
                     <h4>${s.name}</h4>
                     <p>${s.id} | ${s.course}</p>
