@@ -10,42 +10,42 @@
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDKs - This script sets up the global 'window.firebase' object -->
+    <!-- This is now the ONLY script that deals with Firebase initialization -->
     <script type="module">
+        // Step 1: Import everything needed from Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { firebaseConfig } from './firebase-config.js';
         
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        // Make Firebase services globally available for all our scripts
-        // This is the CRITICAL CHANGE: We are adding all firestore functions here.
-        window.firebase = {
-            auth: auth,
-            db: db,
-            GoogleAuthProvider: GoogleAuthProvider,
-            signInWithPopup: signInWithPopup,
-            onAuthStateChanged: onAuthStateChanged,
-            signOut: signOut,
-            // Firestore Functions
-            doc: doc,
-            getDoc: getDoc,
-            setDoc: setDoc,
-            collection: collection,
-            getDocs: getDocs,
-            writeBatch: writeBatch,
-            deleteDoc: deleteDoc
+        // Step 2: Initialize the app
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+
+        // Step 3: Bundle all Firebase tools into a single object
+        const firebaseServices = {
+            auth,
+            db,
+            GoogleAuthProvider,
+            signInWithPopup,
+            onAuthStateChanged,
+            signOut,
+            doc,
+            getDoc,
+            setDoc,
+            collection,
+            getDocs,
+            writeBatch,
+            deleteDoc
         };
 
-        // Signal that Firebase is ready for the main app script to use
-        document.dispatchEvent(new Event('firebase-ready'));
+        // Step 4: Import your main app logic and KICK IT OFF with the firebase tools
+        import { app } from './app.js';
+        app.start(firebaseServices); // This is the new, reliable way to start the app
     </script>
 </head>
 <body>
-
     <!-- Login Screen -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
@@ -78,7 +78,8 @@
         </nav>
 
         <main class="main-container">
-            <!-- Dashboard Section -->
+            <!-- All your sections (Dashboard, Registration, etc.) remain here exactly as they were. -->
+            <!-- No changes are needed below this line in the body. -->
             <section id="dashboard" class="section active">
                 <div class="container">
                     <div class="section-header">
@@ -118,7 +119,6 @@
                 </div>
             </section>
 
-            <!-- Registration Section -->
             <section id="registration" class="section">
                 <div class="container">
                     <div class="section-header">
@@ -164,7 +164,6 @@
                 </div>
             </section>
 
-            <!-- Attendance Section -->
             <section id="attendance" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Mark Attendance</h1></div>
@@ -206,7 +205,6 @@
                 </div>
             </section>
 
-            <!-- Reports Section -->
             <section id="reports" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Attendance Reports</h1></div>
@@ -232,7 +230,6 @@
                 </div>
             </section>
 
-            <!-- Admin Section -->
             <section id="admin" class="section">
                 <div class="container">
                     <div class="section-header"><h1>Admin Panel</h1></div>
@@ -260,14 +257,8 @@
     <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"><div class="spinner"></div><p id="loadingText">Loading...</p></div></div>
     <div id="toast" class="toast"></div>
 
-    <!-- This is the single entry point to our application -->
-    <script type="module">
-        import { app } from './app.js';
-        // Wait until our Firebase services are ready before initializing the main app
-        document.addEventListener('firebase-ready', () => {
-            app.init();
-        });
-    </script>
+    <!-- The main app script is now imported inside the initialization script above -->
+    <!-- No second script tag is needed here anymore -->
 </body>
 </html>
 
