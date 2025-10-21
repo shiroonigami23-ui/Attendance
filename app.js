@@ -1,7 +1,6 @@
 /**
  * app.js
  * The single source of truth for all application logic.
- * Contains the complete, final, and conflict-free initialization flow.
  */
 import { dbHandler, adminListHandler } from './database.js';
 import { ui } from './ui.js';
@@ -9,6 +8,7 @@ import { camera } from './camera.js';
 import { face } from './face.js';
 
 export const app = {
+    firebase: null, // This will hold all our firebase tools
     state: {
         students: [],
         attendanceRecords: [],
@@ -23,75 +23,63 @@ export const app = {
         appStarted: false,
     },
 
-    // This is the single entry point, called by index.html after Firebase is confirmed to be ready.
-    init() {
-        const auth = window.firebase.auth;
+    // MODIFIED: Renamed from init() to start() and now accepts the firebase services
+    start(firebaseServices) {
+        this.firebase = firebaseServices; // Store firebase tools for the whole app to use
+        const { auth, onAuthStateChanged } = this.firebase;
         
-        // Always set up the login button listener.
         document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
 
-        // This listener is the main gatekeeper of the app.
-        window.firebase.onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // A user is signed in. We MUST verify they are an admin.
-                const isAdmin = await adminListHandler.isAdmin(user.uid);
+                // MODIFIED: Pass 'this.firebase' to the isAdmin check
+                const isAdmin = await adminListHandler.isAdmin(this.firebase, user.uid);
                 if (isAdmin) {
-                    // This user is on the admin list. Let them in.
                     this.state.adminUser = user;
                     this.showApp();
-                    // Load their app data ONLY if it hasn't been loaded before.
                     if (!this.appStarted) {
                         this.appStarted = true;
                         await this.startAppData();
                     }
                 } else {
-                    // This user signed in but is NOT on the admin list.
-                    // Show an error and sign them out immediately.
                     ui.showToast('This Google account is not authorized.', 'error');
-                    window.firebase.signOut(auth);
+                    this.firebase.signOut(auth);
                     this.showLogin();
                 }
             } else {
-                // No user is signed in. Show the login screen.
-                this.appStarted = false; // Reset app state on logout
+                this.appStarted = false; 
                 this.showLogin();
             }
         });
     },
 
-    // This function's only job is to handle a new login attempt.
     async handleLogin() {
-        const provider = new window.firebase.GoogleAuthProvider();
-        const auth = window.firebase.auth;
+        const { auth, GoogleAuthProvider, signInWithPopup } = this.firebase;
+        const provider = new GoogleAuthProvider();
         const authStatus = document.getElementById('auth-status');
         authStatus.textContent = 'Opening Google Sign-in...';
 
         try {
-            const result = await window.firebase.signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
             const user = result.user;
             authStatus.textContent = 'Verifying admin status...';
             
-            // After a successful sign-in, the onAuthStateChanged listener will fire.
-            // Our job here is to check if this is a NEW user and add them to the admin list if there's space.
-            const admins = await adminListHandler.getAdmins();
+            // MODIFIED: Pass 'this.firebase' to admin list functions
+            const admins = await adminListHandler.getAdmins(this.firebase);
             const isExistingAdmin = admins.some(admin => admin.uid === user.uid);
 
             if (isExistingAdmin) {
-                // They are already an admin. onAuthStateChanged will let them in.
                 authStatus.textContent = 'Welcome back!';
             } else if (admins.length < 10) {
-                // This is a new user, and there is space. Add them to the list.
                 authStatus.textContent = 'Registering new admin...';
-                await adminListHandler.addAdmin(user);
-                // Now that they're on the list, onAuthStateChanged will succeed.
+                await adminListHandler.addAdmin(this.firebase, user);
             } else {
-                // This is a new user, but the admin list is full.
                 authStatus.textContent = 'Admin registration is full.';
                 ui.showToast('The maximum number of admins has been reached.', 'error');
-                await window.firebase.signOut(auth); // Immediately sign them out.
+                await this.firebase.signOut(auth);
             }
-
         } catch (error) {
+            // ... (rest of the function is unchanged)
             if (error.code !== 'auth/popup-closed-by-user') {
                 authStatus.textContent = `Login Failed: ${error.message}`;
                 console.error("Login Error:", error);
@@ -111,14 +99,13 @@ export const app = {
         document.getElementById('app-container').classList.remove('hidden');
     },
 
-    // This function loads all the necessary data for a verified admin.
     async startAppData() {
         if (!this.state.adminUser) return;
         ui.showLoading(true, "Loading admin data...");
         
-        const data = await dbHandler.load(this.state.adminUser.uid);
+        // MODIFIED: Pass 'this.firebase' to the load function
+        const data = await dbHandler.load(this.firebase, this.state.adminUser.uid);
         
-        // Merge loaded data with defaults, preserving critical state
         const preservedState = {
             listenersAttached: this.state.listenersAttached,
             adminUser: this.state.adminUser,
@@ -142,16 +129,17 @@ export const app = {
     setupEventListeners() {
         if (this.listenersAttached) return;
         this.listenersAttached = true;
+        
+        const { auth, signOut } = this.firebase;
 
         document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => ui.showSection(btn.dataset.section)));
-        document.getElementById('logout-btn').addEventListener('click', () => window.firebase.signOut(window.firebase.auth));
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
         document.getElementById('themeToggle').addEventListener('click', ui.toggleTheme);
         
         document.getElementById('startRegistrationCamera').addEventListener('click', this.startRegistrationCamera.bind(this));
         document.getElementById('capturePhoto').addEventListener('click', this.capturePhoto.bind(this));
         document.getElementById('registerStudent').addEventListener('click', this.registerStudent.bind(this));
         
-        // Event delegation for remove buttons
         const studentList = document.getElementById('registeredStudentsList');
         if (studentList) {
             studentList.addEventListener('click', (e) => {
@@ -200,6 +188,7 @@ export const app = {
             name: document.getElementById('studentName').value.trim(),
             course: document.getElementById('studentCourse').value,
             email: document.getElementById('studentEmail').value.trim(),
+            photoURL: '' // Initialize photoURL
         };
 
         if (!student.id || !student.name) return ui.showToast('Student ID and Name are required.', 'error');
@@ -215,7 +204,7 @@ export const app = {
 
         ui.showLoading(true, 'Creating face signature...');
         const img = new Image();
-        img.crossOrigin = 'Anonymous'; // Required for loading images from another domain (PythonAnywhere)
+        img.crossOrigin = 'Anonymous'; 
         img.src = student.photoURL;
         img.onload = async () => {
             const descriptor = await face.getDescriptor(img);
@@ -226,7 +215,8 @@ export const app = {
             
             student.faceDescriptor = Array.from(descriptor);
             this.state.students.push(student);
-            await dbHandler.save(this.state.adminUser.uid, this.state);
+            // MODIFIED: Pass 'this.firebase' to the save function
+            await dbHandler.save(this.firebase, this.state.adminUser.uid, this.state);
             
             face.createMatcher(this.state.students);
             ui.refresh(this.state);
@@ -246,7 +236,8 @@ export const app = {
     async removeStudent(studentId) {
         if (confirm(`Are you sure you want to remove student ${studentId}? This is permanent.`)) {
             this.state.students = this.state.students.filter(s => s.id !== studentId);
-            await dbHandler.deleteStudent(this.state.adminUser.uid, studentId);
+            // MODIFIED: Pass 'this.firebase' to the delete function
+            await dbHandler.deleteStudent(this.firebase, this.state.adminUser.uid, studentId);
             face.createMatcher(this.state.students);
             ui.refresh(this.state);
             ui.showToast('Student removed successfully.', 'success');
@@ -260,7 +251,7 @@ export const app = {
         document.getElementById('startSession').disabled = true;
         document.getElementById('endSession').disabled = false;
         document.getElementById('startAttendanceCamera').disabled = false;
-        document.getElementById('sessionStatus').textContent = 'Session Active';
+        document.getElementById('sessionStatus').textContent = `Session Active: ${course}`;
         ui.showToast(`Session for ${course} started.`, 'success');
     },
     
@@ -268,7 +259,8 @@ export const app = {
         this.stopAttendance();
         if (this.state.currentSession && this.state.currentSession.attendanceRecords.length > 0) {
             this.state.attendanceRecords.push(this.state.currentSession);
-            await dbHandler.save(this.state.adminUser.uid, this.state);
+            // MODIFIED: Pass 'this.firebase' to the save function
+            await dbHandler.save(this.firebase, this.state.adminUser.uid, this.state);
         }
         this.state.currentSession = null;
         document.getElementById('startSession').disabled = false;
@@ -296,8 +288,8 @@ export const app = {
             const descriptor = await face.getDescriptor(videoEl);
             if (descriptor) {
                 const match = face.findBestMatch(descriptor);
-                document.getElementById('recognitionStatus').textContent = `Match Found: ${match.toString()}`;
                 if (match && match.label !== 'unknown') {
+                    document.getElementById('recognitionStatus').textContent = `Match: ${match.label}`;
                     const student = this.state.students.find(s => s.id === match.label);
                     const isMarked = this.state.currentSession.attendanceRecords.some(r => r.studentId === student.id);
                     if (student && !isMarked) {
@@ -305,6 +297,8 @@ export const app = {
                         ui.updateLiveAttendance(this.state.currentSession);
                         ui.showToast(`${student.name} marked present!`, 'success');
                     }
+                } else {
+                    document.getElementById('recognitionStatus').textContent = 'Scanning... No match.';
                 }
             } else {
                 document.getElementById('recognitionStatus').textContent = 'Scanning for faces...';
@@ -338,7 +332,8 @@ export const app = {
     
     async saveSettings() {
         this.state.settings.geminiApiKey = document.getElementById('gemini-api-key').value;
-        await dbHandler.save(this.state.adminUser.uid, this.state);
+        // MODIFIED: Pass 'this.firebase' to the save function
+        await dbHandler.save(this.firebase, this.state.adminUser.uid, this.state);
         ui.showToast('Settings saved.', 'success');
     },
 
@@ -346,7 +341,8 @@ export const app = {
         if (confirm('Are you absolutely sure you want to clear ALL student and attendance data? This action cannot be undone.')) {
             this.state.students = [];
             this.state.attendanceRecords = [];
-            await dbHandler.save(this.state.adminUser.uid, this.state);
+            // MODIFIED: Pass 'this.firebase' to the save function
+            await dbHandler.save(this.firebase, this.state.adminUser.uid, this.state);
             face.createMatcher([]);
             ui.refresh(this.state);
             ui.showToast('All application data has been cleared.', 'success');
