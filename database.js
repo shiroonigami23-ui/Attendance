@@ -1,9 +1,12 @@
 /**
  * database.js
- * Handles all Firestore operations and image uploads to PythonAnywhere.
+ * Handles all Firestore operations.
+ * It relies on the global window.firebase object initialized in index.html
  */
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ui } from './ui.js';
+
+// All the firebase functions we need are now on the window object
+const { db, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } = window.firebase;
 
 export const dbHandler = {
     async uploadImage(backendUrl, studentId, base64Image) {
@@ -33,7 +36,6 @@ export const dbHandler = {
 
     async save(adminId, state) {
         if (!adminId) return;
-        const db = getFirestore();
         const batch = writeBatch(db);
 
         const settingsRef = doc(db, "admins", adminId, "config", "settings");
@@ -54,7 +56,6 @@ export const dbHandler = {
 
     async load(adminId) {
         if (!adminId) return { students: [], attendanceRecords: [], settings: {} };
-        const db = getFirestore();
         try {
             const settingsSnap = await getDoc(doc(db, "admins", adminId, "config", "settings"));
             const settings = settingsSnap.exists() ? settingsSnap.data() : {};
@@ -72,7 +73,6 @@ export const dbHandler = {
 
     async deleteStudent(adminId, studentId) {
         if (!adminId || !studentId) return;
-        const db = getFirestore();
         await deleteDoc(doc(db, "admins", adminId, "students", studentId));
     },
 
@@ -86,26 +86,21 @@ export const dbHandler = {
     },
 };
 
-/**
- * ** CORRECTED: This part is now fixed and properly structured. **
- * Handles checking and managing the global list of admins.
- */
 export const adminListHandler = {
     async getAdmins() {
-        const db = getFirestore();
         const adminsSnapshot = await getDocs(collection(db, "adminsList"));
         return adminsSnapshot.docs.map(doc => doc.data());
     },
-     async isAdmin(uid) {
+    
+    async isAdmin(uid) {
         if (!uid) return false;
-        const db = getFirestore();
         const adminRef = doc(db, "adminsList", uid);
         const adminSnap = await getDoc(adminRef);
         return adminSnap.exists();
     },
+    
     async addAdmin(user) {
         if (!user || !user.uid) return;
-        const db = getFirestore();
         const adminRef = doc(db, "adminsList", user.uid);
         await setDoc(adminRef, {
             email: user.email,
