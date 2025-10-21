@@ -1,14 +1,12 @@
 /**
  * database.js
  * Handles all Firestore operations.
- * It relies on the global window.firebase object initialized in index.html
+ * It does NOT initialize firebase. It receives the 'db' instance from app.js
  */
 import { ui } from './ui.js';
 
-// All the firebase functions we need are now on the window object
-const { db, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } = window.firebase;
-
 export const dbHandler = {
+    // This function does not interact with firebase, so it's unchanged.
     async uploadImage(backendUrl, studentId, base64Image) {
         if (!backendUrl || !studentId || !base64Image) {
             console.error("Missing parameters for image upload.");
@@ -34,8 +32,10 @@ export const dbHandler = {
         }
     },
 
-    async save(adminId, state) {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async save(firebase, adminId, state) {
         if (!adminId) return;
+        const { db, writeBatch, doc } = firebase;
         const batch = writeBatch(db);
 
         const settingsRef = doc(db, "admins", adminId, "config", "settings");
@@ -54,8 +54,10 @@ export const dbHandler = {
         await batch.commit().catch(e => console.error("Firestore Save Error:", e));
     },
 
-    async load(adminId) {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async load(firebase, adminId) {
         if (!adminId) return { students: [], attendanceRecords: [], settings: {} };
+        const { db, getDoc, getDocs, collection, doc } = firebase;
         try {
             const settingsSnap = await getDoc(doc(db, "admins", adminId, "config", "settings"));
             const settings = settingsSnap.exists() ? settingsSnap.data() : {};
@@ -71,8 +73,10 @@ export const dbHandler = {
         }
     },
 
-    async deleteStudent(adminId, studentId) {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async deleteStudent(firebase, adminId, studentId) {
         if (!adminId || !studentId) return;
+        const { db, deleteDoc, doc } = firebase;
         await deleteDoc(doc(db, "admins", adminId, "students", studentId));
     },
 
@@ -87,20 +91,26 @@ export const dbHandler = {
 };
 
 export const adminListHandler = {
-    async getAdmins() {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async getAdmins(firebase) {
+        const { db, getDocs, collection } = firebase;
         const adminsSnapshot = await getDocs(collection(db, "adminsList"));
         return adminsSnapshot.docs.map(doc => doc.data());
     },
     
-    async isAdmin(uid) {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async isAdmin(firebase, uid) {
         if (!uid) return false;
+        const { db, getDoc, doc } = firebase;
         const adminRef = doc(db, "adminsList", uid);
         const adminSnap = await getDoc(adminRef);
         return adminSnap.exists();
     },
     
-    async addAdmin(user) {
+    // MODIFIED: Now accepts 'firebase' object as first argument
+    async addAdmin(firebase, user) {
         if (!user || !user.uid) return;
+        const { db, setDoc, doc } = firebase;
         const adminRef = doc(db, "adminsList", user.uid);
         await setDoc(adminRef, {
             email: user.email,
